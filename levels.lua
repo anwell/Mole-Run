@@ -60,16 +60,11 @@ end
 function loadData()	
 	local file = io.open( filePath, "r" )
 	local contents
-	if file == nil then
-		print("pleasepleaseplease")
-	end
 	if file then
-		print("blab")
 		contents = file:read("*a")
 		--levelInfo = nil
 		levelInfo = json.decode(contents)
 		if #levelInfo == 0 then
-			print("hooray")
 		end
 		io.close(file)
 	end
@@ -198,7 +193,7 @@ end
 -- Called when scene is about to move offscreen:
 function scene:exitScene( event )
 	local group = self.view
-	
+
 	-----------------------------------------------------------------------------
 	
 	--	INSERT code here (e.g. stop timers, remove listeners, unload sounds, etc.)

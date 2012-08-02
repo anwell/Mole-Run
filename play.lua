@@ -352,7 +352,6 @@ local levelInfo = {
 function saveData()
 	file = io.open(filePath, "w")
 	if file then
-		print("f")
 		contents = json.encode (levelInfo)
 		file:write(contents)
 		io.close(file)
@@ -749,7 +748,6 @@ end
 -- 
 
 local onButtonUpEvent = function(event)
-	print("coolio")
 	player.direction = DIRECTION_UP	
 	if event.phase == "press" and canMove() then
 		if canPushBoulder() and player.state == STATE_IDLE then
@@ -823,7 +821,6 @@ completeMoving = function(obj)
 
 		if canPushBoulder() then
 			action = false
-			print("B")
 			player:play()
 			local nextPlayer = createPossibleObject(player, player.direction)
 			
@@ -845,7 +842,6 @@ local function unheld (event)
 		if (player.i == (player.y + OFFSET) / TILE_WIDTH) == false or (player.j == (player.x + OFFSET) / TILE_WIDTH) == false then
 		-- 	player.x = player.j * TILE_WIDTH - OFFSET
 		-- 	player.y = player.i * TILE_WIDTH - OFFSET
-		 	print("BLASPHEMY")
 		 end
 		--print( player.state)
 	end
@@ -964,7 +960,7 @@ local function canGravityObject(object)
 		end
 	end
 	possibleObject:removeSelf()
-	--completeMoving()
+	completeMoving()
 	return true
 end
 

@@ -33,13 +33,13 @@ print("something"..currentLevel)
 
 local onResumeButton = function(event)
 	if event.phase == "press" then
-		storyboard.gotoScene( "play", "slideDown", 800  )
+		storyboard.gotoScene( "menu", "slideDown", 800  )
 	end
 end
 
 local resumeButton = ui.newButton{
-	default = "images/ResumeButton.png",
-	over = "images/ResumeButtonselect.png",
+	default = "images/MenuButton.png",
+	over = "images/MenuButtonselect.png",
 	onEvent = onResumeButton
 }
 

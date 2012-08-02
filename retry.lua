@@ -25,14 +25,14 @@ local onRetryButton = function(event)
 end
 
 local retryButton = ui.newButton{
-	default = "images/retry button.png",
-	over = "images/retry button select.png",
+	default = "images/Quit Button.png",
+	over = "images/quit button select.png",
 	onEvent = onRetryButton
 }
 
 local onMenuButton = function(event)
 	if event.phase == "press" then
-		storyboard.gotoScene( "menu", "slideRight", 800  )
+		storyboard.gotoScene( "quit", "slideRight", 800  )
 	end
 end
 

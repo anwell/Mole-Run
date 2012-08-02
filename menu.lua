@@ -103,7 +103,7 @@ function scene:enterScene( event )
 	storyboard.removeScene("quit")
 	storyboard.removeScene("scores")
 	storyboard.removeScene("play")
-	media.playSound("sounds/Speed Kills.WAV", true)
+	--media.playSound("sounds/Speed Kills.WAV", true)
 end
 
 

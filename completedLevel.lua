@@ -104,7 +104,7 @@ end
 function scene:enterScene( event )
 	local group = self.view
 	storyboard.removeScene( "play")
-	media.playSound("sounds/Speed Kills.WAV", true)
+	--media.playSound("sounds/Speed Kills.WAV", true)
 	local function addBonus()
 		if timeBonus > 0 then
 			timeBonus = timeBonus - 10
