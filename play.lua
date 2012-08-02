@@ -4,6 +4,7 @@
 display.setStatusBar (display.HiddenStatusBar)
 
 local ui = require("ui")
+local widget = require "widget"
 require ("sprite")
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
@@ -17,7 +18,7 @@ local DIRECTION_LEFT = 2
 local TILE_WIDTH = 26
 local TIME_LIMIT = 45
 local OFFSET = TILE_WIDTH / 2
-local SPEED = 90
+local SPEED = 85
 local SPEED_ENEMY = SPEED + 100
 local SCORE_MULTIPLIER = 10
 local gameState = false
@@ -394,6 +395,23 @@ local function hasCollided(object1, object2)
 	return false
 end
 
+
+-- rectangle based
+local function hasCollidedRectangle(obj1, obj2)
+    if obj1 == nil then
+        return false
+    end
+    if obj2 == nil then
+        return false
+    end
+    local left = obj1.contentBounds.xMin <= obj2.contentBounds.xMin and obj1.contentBounds.xMax >= obj2.contentBounds.xMin
+    local right = obj1.contentBounds.xMin >= obj2.contentBounds.xMin and obj1.contentBounds.xMin <= obj2.contentBounds.xMax
+    local up = obj1.contentBounds.yMin <= obj2.contentBounds.yMin and obj1.contentBounds.yMax >= obj2.contentBounds.yMin
+    local down = obj1.contentBounds.yMin >= obj2.contentBounds.yMin and obj1.contentBounds.yMin <= obj2.contentBounds.yMax
+    return (left or right) and (up or down)
+end
+
+
 local function createPossibleObject (object, direction)
 	local possibleObject = display.newRect( 0, 0, 0, 0 )
 	possibleObject.x = object.x
@@ -667,36 +685,86 @@ end
 ----------------------------------------------------
 --MOVING THE PLAYER
 ----------------------------------------------------
+--local action = false
+
+local function changeDirection(test)
+	if hasCollidedRectangle(test, right) then
+		if player.direction == DIRECTION_RIGHT then
+			return
+		else
+			display.getCurrentStage():setFocus(right)
+			player.direction = DIRECTION_RIGHT
+			player:prepare("playerright")
+		end
+	elseif hasCollidedRectangle(test, up) then
+		if player.direction == DIRECTION_UP then
+			return
+		else
+			display.getCurrentStage():setFocus(up)
+			player.direction = DIRECTION_UP
+		end
+	elseif hasCollidedRectangle(test, left) then
+		if player.direction == DIRECTION_LEFT then
+			return
+		else
+			player.direction = DIRECTION_LEFT
+			display.getCurrentStage():setFocus(left)
+			player:prepare("playerleft")
+		end
+	elseif hasCollidedRectangle(test, down) then
+		if player.direction == DIRECTION_DOWN then
+			return
+		else
+			player.direction = DIRECTION_DOWN
+			display.getCurrentStage():setFocus(down)
+		end
+	end
+	completeMoving()
+end
+
 local onButtonRightEvent = function(event)
 	player.direction = DIRECTION_RIGHT
 	player:prepare("playerright")
 	if event.phase == "press" and canMove() then
-		if canPushBoulder() then
+		if canPushBoulder() and player.state == STATE_IDLE then
+			--action = true
 			player.state = STATE_WALKING
 			player:play("playerright")
-			transition.to(player, {time=SPEED, x=player.x+TILE_WIDTH, y=player.y, onComplete=completeMoving})
-			player.j = player.j + 1
+			-- transition.to(player, {time=SPEED, x=player.x+TILE_WIDTH, y=player.y})
+			 player.j = player.j + 1
+			-- timer1 = timer.performWithDelay(250, completeMoving)
+			-- print("A")
+			completeMoving()
+			--action = false
 			-- snapPlayerToGrid()
 		end
-	else
-		player.state = STATE_IDLE
+	elseif event.phase == "moved" then
+		local test = display.newRect( event.x, event.y, 0, 0 )
+		changeDirection(test)
+		test:removeSelf()
+		--player.state = STATE_IDLE
 	end
 end
 --Pass the touch listener, focus
 -- 
 
 local onButtonUpEvent = function(event)
+	print("coolio")
 	player.direction = DIRECTION_UP	
 	if event.phase == "press" and canMove() then
-		if canPushBoulder() then
+		if canPushBoulder() and player.state == STATE_IDLE then
 			player.state = STATE_WALKING
 			player:play()
-			transition.to(player, {time=SPEED, x=player.x, y=player.y-TILE_WIDTH, onComplete=completeMoving})
-			player.i = player.i - 1
+			-- transition.to(player, {time=SPEED, x=player.x, y=player.y-TILE_WIDTH})
+			-- timer1 = timer.performWithDelay(250, completeMoving)
+			 player.i = player.i - 1
 			-- snapPlayerToGrid()
+			completeMoving()
 		end
-	else
-		player.state = STATE_IDLE
+	elseif event.phase == "moved" then
+		local test = display.newRect( event.x, event.y, 0, 0 )
+		changeDirection(test)
+		test:removeSelf()
 	end
 end
 
@@ -704,39 +772,63 @@ local onButtonLeftEvent = function(event)
 	player.direction = DIRECTION_LEFT
 	player:prepare("playerleft")
 	if event.phase == "press" and canMove() then
-		if canPushBoulder() then
+		if canPushBoulder() and player.state == STATE_IDLE then
 		player.state = STATE_WALKING
 		player:play("playerleft")
-		transition.to(player, {time=SPEED, x=player.x-TILE_WIDTH, y=player.y, onComplete=completeMoving})
-		player.j = player.j - 1
-			-- snapPlayerToGrid()
+		-- transition.to(player, {time=SPEED, x=player.x-TILE_WIDTH, y=player.y})
+		-- timer1 = timer.performWithDelay(250, completeMoving)
+		 player.j = player.j - 1
+		-- 	-- snapPlayerToGrid()
+		completeMoving()
 		end
-	else
-		player.state = STATE_IDLE
+	elseif event.phase == "moved" then
+		local test = display.newRect( event.x, event.y, 0, 0 )
+		changeDirection(test)
+		test:removeSelf()
+		--player.state = STATE_IDLE
 	end
 end
 
 local onButtonDownEvent = function(event)
+		--timer.cancel(timer1)
 		player.direction = DIRECTION_DOWN
 	if event.phase == "press" and canMove() then
-	if canPushBoulder() then
-		player.state = STATE_WALKING
+	if canPushBoulder() and player.state == STATE_IDLE then
+
+		print("a")
+		 player.state = STATE_WALKING
 		player:play()
-		transition.to(player, {time=SPEED, x=player.x, y=player.y+TILE_WIDTH, onComplete=completeMoving})
-		player.i = player.i + 1
+		-- transition.to(player, {time=SPEED, x=player.x, y=player.y+TILE_WIDTH})
+		-- timer.performWithDelay(250, completeMoving)
+		 player.i = player.i + 1
+		completeMoving()
 			-- snapPlayerToGrid()
 		end
-	else
-		player.state = STATE_IDLE
+	elseif event.phase == "moved" then
+		local test = display.newRect( event.x, event.y, 0, 0 )
+		changeDirection(test)
+		test:removeSelf()
+		--player.state = STATE_IDLE
 	end
 end
+local action = true
 
+completeMoving2 = function()
+	action = true
+	completeMoving()
+end
 completeMoving = function(obj)
-	if player.state == STATE_WALKING and canMove() then
+	--timer.cancel(timer1)
+	if player.state == STATE_WALKING and canMove() and action then
+
 		if canPushBoulder() then
+			action = false
+			print("B")
+			player:play()
 			local nextPlayer = createPossibleObject(player, player.direction)
 			
-			transition.to(player, {time=SPEED, x=nextPlayer.x, y=nextPlayer.y, onComplete=completeMoving})
+			transition.to(player, {time=SPEED, x=nextPlayer.x, y=nextPlayer.y, onComplete=completeMoving2})
+			
 			nextPlayer:removeSelf()
 			snapPlayerToGrid()
 			
@@ -745,34 +837,37 @@ completeMoving = function(obj)
 end
 
 local function unheld (event)
+	--print(event.phase)
 	if event.phase == "ended" then
+		--timer.cancel(timer1)
 		player.state = STATE_IDLE
 		player:pause()
 		if (player.i == (player.y + OFFSET) / TILE_WIDTH) == false or (player.j == (player.x + OFFSET) / TILE_WIDTH) == false then
-			player.x = player.j * TILE_WIDTH - OFFSET
-			player.y = player.i * TILE_WIDTH - OFFSET
-			print("F")
-		end
+		-- 	player.x = player.j * TILE_WIDTH - OFFSET
+		-- 	player.y = player.i * TILE_WIDTH - OFFSET
+		 	print("BLASPHEMY")
+		 end
+		--print( player.state)
 	end
 end
 
 local function createDpad()
-	up = ui.newButton{
+	up = widget.newButton{
 		default = "images/Dpad Key up.png",
 		over = "images/Dpad Key up.png",
 		onEvent = onButtonUpEvent
 	}
-	down = ui.newButton{
+	down = widget.newButton{
 		default = "images/Dpad Key down.png",
 		over = "images/Dpad Key down.png",
 		onEvent = onButtonDownEvent
 	}
-	left = ui.newButton{
+	left = widget.newButton{
 		default = "images/Dpad Key left.png",
 		over = "images/Dpad Key left.png",
 		onEvent = onButtonLeftEvent
 	}
-	right = ui.newButton{
+	right = widget.newButton{
 		default = "images/Dpad Key right.png",
 		over = "images/Dpad Key right.png",
 		onEvent = onButtonRightEvent
@@ -794,6 +889,11 @@ local function createDpad()
 	dpadGroup:insert(down)
 	dpadGroup:insert(left)
 	dpadGroup:insert(right)
+
+	down:addEventListener("touch", onButtonDownEvent)
+	up:addEventListener("touch", onButtonUpEvent)
+	right:addEventListener("touch", onButtonRightEvent)
+	left:addEventListener("touch", onButtonLeftEvent)
 end
 
 local function cleanGroups(group)
@@ -864,6 +964,7 @@ local function canGravityObject(object)
 		end
 	end
 	possibleObject:removeSelf()
+	--completeMoving()
 	return true
 end
 
@@ -1285,6 +1386,11 @@ end
 
 local number = add2Numbers(2, 3)
 
+
+
+
+
+
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	local group = self.view
@@ -1298,7 +1404,6 @@ function scene:enterScene( event )
 	gravityTimer = timer.performWithDelay(200,gravityBoulders,0)
 
 	Runtime:addEventListener("enterFrame", testCollisions)
-
 end
 
 
@@ -1308,7 +1413,7 @@ function scene:exitScene( event )
 	timer.pause(countdownTimer)
 	timer.pause(enemyTimer)
 	timer.pause(gravityTimer)
-	
+
 	--Runtime:removeEventListener("enterFrame", gravityBoulders)
 	Runtime:removeEventListener("enterFrame", testCollisions)
 end
