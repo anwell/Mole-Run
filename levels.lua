@@ -19,9 +19,61 @@ local OFFSET = 30
 
 local buildLevelsPage
 
-local levelsPages = {}
-levelsPages[1] = {{1,2,3,4,5},
-				 {6,7,8,9,10},}
+local json = require "json"
+local saveData, loadData
+local filePath = system.pathForFile( "levelInfoTable.json", system.DocumentsDirectory )
+
+-- {level #, row #, unlocked or not}
+local levelInfo = {
+	{1, 1, true},
+	{2, 1, false},
+	{3, 1, false},
+	{4, 1, false},
+	{5, 1, false},
+	{6, 2,false},
+	{7, 2,false},
+	{8, 2,false},
+	{9, 2,false},
+	{10, 2,false},
+	{11,1, false},
+	{12, 1,false},
+	{13,1, false},
+	{14, 1,false},
+	{15,1, false},
+	{16, 2,false},
+	{17,2, false},
+	{18, 2,false},
+	{19,2, false},
+	{20, 2,false},
+}
+
+function saveData()
+	file = io.open(filePath, "w")
+	local contents
+	if file then
+		contents = json.encode (levelInfo)
+		file:write(contents)
+		io.close(file)
+	end
+end
+
+function loadData()	
+	local file = io.open( filePath, "r" )
+	local contents
+	if file == nil then
+		print("pleasepleaseplease")
+	end
+	if file then
+		print("blab")
+		contents = file:read("*a")
+		--levelInfo = nil
+		levelInfo = json.decode(contents)
+		if #levelInfo == 0 then
+			print("hooray")
+		end
+		io.close(file)
+	end
+end
 
 local onMenuButton = function(event)
 	if event.phase == "press" then
@@ -29,7 +81,7 @@ local onMenuButton = function(event)
 	end
 end
 
-local menuButton = ui.newButton{
+local menuButton = widget.newButton{
 	default = "images/MenuButton.png",
 	over = "images/MenuButtonselect.png",
 	onEvent = onMenuButton
@@ -41,7 +93,7 @@ local onScoresButton = function(event)
 	end
 end
 
-local scoresButton = ui.newButton{
+local scoresButton = widget.newButton{
 	default = "images/high score button.png",
 	over = "images/high score button select.png",
 	onEvent = onScoresButton
@@ -53,7 +105,7 @@ local onNextPageButton = function(event)
 	end
 end
 
-local nextPageButton = ui.newButton{
+local nextPageButton = widget.newButton{
 	default = "images/Dpad Key right.png",
 	over = "images/Dpad Key right.png",
 	onEvent = onNextPageButton
@@ -64,27 +116,44 @@ local nextPageButton = ui.newButton{
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
 	local group = self.view
-	local onLevelButton = function(event)
-		if event.phase == "press" then
-			storyboard.currentLevel = event.target.name
+	local onLevelButton = function(buttonEvent)
+		--if event.phase == "press" then
+			storyboard.currentLevel = buttonEvent.target.name
 			storyboard.gotoScene( "play", "slideDown", 800  )
-		end
+		--end
 	end
 	function buildLevelsPage(levelsPage)
-		for i = 1, 2 do -- table height
-			for j =1, 5 do -- table length
+		local j = 1
+		for i = 1, 10 do -- table height
+			--for j =1, 5 do -- table length
+			local levelButton
+			if levelsPage[i][3] then
 				levelButton = widget.newButton{
-				default = "images/Level Button"..levelsPage[i][j]..".png",
-				over = "images/Level Button"..levelsPage[i][j]..".png",
-				onEvent = onLevelButton
+				default = "images/Level Button"..levelsPage[i][1]..".png",
+				over = "images/Level Button"..levelsPage[i][1]..".png",
+				onPress = onLevelButton
 				}
-				levelButton.x = j * BUTTON_SPACE - OFFSET
-				levelButton.y = i * BUTTON_SPACE + OFFSET - 10
-				levelButton.name = levelsPage[i][j]
-				group:insert(levelButton)
+			else
+				levelButton = widget.newButton{
+				default = "images/Level Button"..levelsPage[i][1]..".png",
+				over = "images/Level Button"..levelsPage[i][1]..".png",
+				defaultColor = { 255, 255, 255, 75 },
+				overColor = { 255, 255, 255, 75 }
+				}
 			end
+			levelButton.x = j * BUTTON_SPACE - OFFSET
+			if j < 5 then
+				j = j +1
+			else
+				j = 1
+			end
+			levelButton.y = levelsPage[i][2] * BUTTON_SPACE + OFFSET - 10
+			levelButton.name = levelsPage[i][1]
+			group:insert(levelButton)
+			--end
 		end
 	end
+
 	group:insert(background)
 	-- group:insert(nextLevelButton)
 	-- group:insert(level2Button)
@@ -92,7 +161,9 @@ function scene:createScene( event )
 	group:insert(menuButton)
 	group:insert(scoresButton)
 	group:insert(nextPageButton)
-	buildLevelsPage(levelsPages[page])
+	--buildLevelsPage(levelsPages[page])
+	loadData()
+	buildLevelsPage(levelInfo)
 	levelsTitle.x = 240
 	levelsTitle.y = 30
 	menuButton.x = 380

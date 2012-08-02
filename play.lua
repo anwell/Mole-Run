@@ -320,6 +320,54 @@ levels[20] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 
 storyboard.lastLevel = #levels
 
+local json = require 'json'
+local saveData, loadData
+local filePath = system.pathForFile( "levelInfoTable.json", system.DocumentsDirectory )
+
+-- {level #, row #, unlocked or not}
+local levelInfo = {
+	{1, 1, true},
+	{2, 1, false},
+	{3, 1, false},
+	{4, 1, false},
+	{5, 1, false},
+	{6, 2,false},
+	{7, 2,false},
+	{8, 2,false},
+	{9, 2,false},
+	{10, 2,false},
+	{11,1, false},
+	{12, 1,false},
+	{13,1, false},
+	{14, 1,false},
+	{15,1, false},
+	{16, 2,false},
+	{17,2, false},
+	{18, 2,false},
+	{19,2, false},
+	{20, 2,false},
+}
+
+function saveData()
+	file = io.open(filePath, "w")
+	if file then
+		print("f")
+		contents = json.encode (levelInfo)
+		file:write(contents)
+		io.close(file)
+	end
+end
+
+function loadData()	
+	local file = io.open( filePath, "r" )
+	if file then
+		contents = file:read("*a")
+		levelInfo = nil
+		levelInfo = json.decode(contents)
+		io.close(file)
+	end
+end
+
 local function createPlayer()
 	sprite.add (playerSet, "playerleft", 8, 2, 100, 0)
 	sprite.add (playerSet, "playerright", 1, 2, 100, 0)
@@ -1116,6 +1164,9 @@ end
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
 	local group = self.view
+	loadData()
+	levelInfo[currentLevel][3] = true
+	saveData()
 	function buildLevel(level)
 		for i = 1, 13 do -- table height
 			for j =1, 19 do -- table length
@@ -1239,7 +1290,8 @@ function scene:enterScene( event )
 	local group = self.view
 	--Runtime:addEventListener("enterFrame", gravityBoulders)\
 	storyboard.removeScene("completedLevel")
-
+	storyboard.removeScene("levels")
+	storyboard.removeScene("levels2")
 
 	countdownTimer = timer.performWithDelay(1000,subtractTime,0)
 	enemyTimer = timer.performWithDelay(300,moveEnemy,0)
@@ -1256,6 +1308,7 @@ function scene:exitScene( event )
 	timer.pause(countdownTimer)
 	timer.pause(enemyTimer)
 	timer.pause(gravityTimer)
+	
 	--Runtime:removeEventListener("enterFrame", gravityBoulders)
 	Runtime:removeEventListener("enterFrame", testCollisions)
 end
