@@ -25,8 +25,8 @@ local onRetryButton = function(event)
 end
 
 local retryButton = ui.newButton{
-	default = "images/Quit Button.png",
-	over = "images/quit button select.png",
+	default = "images/retry button.png",
+	over = "images/retry button select.png",
 	onEvent = onRetryButton
 }
 
@@ -37,8 +37,8 @@ local onMenuButton = function(event)
 end
 
 local menuButton = ui.newButton{
-	default = "images/MenuButton.png",
-	over = "images/MenuButtonselect.png",
+	default = "images/Quit Button.png",
+	over = "images/quit button select.png",
 	onEvent = onMenuButton
 }
 

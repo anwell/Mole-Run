@@ -124,32 +124,37 @@ function scene:createScene( event )
 	function buildLevelsPage(levelsPage)
 		local j = 1
 		for i = 11, 20 do -- table height
-			--for j =1, 5 do -- table length
-			local levelButton
+		local levelButton
+			local lock = display.newImage("images/lockbutton.png")
+			lock.isVisible = false
 			if levelsPage[i][3] then
 				levelButton = widget.newButton{
 				default = "images/Level Button"..levelsPage[i][1]..".png",
 				over = "images/Level Button"..levelsPage[i][1]..".png",
 				onPress = onLevelButton
 				}
+				print(i)
 			else
 				levelButton = widget.newButton{
 				default = "images/Level Button"..levelsPage[i][1]..".png",
 				over = "images/Level Button"..levelsPage[i][1]..".png",
-				defaultColor = { 255, 255, 255, 75 },
-				overColor = { 255, 255, 255, 75 }
+				onPress = doNothing
 				}
+				print("fasdf")
+				lock.isVisible = true
 			end
 			levelButton.x = j * BUTTON_SPACE - OFFSET
+			lock.x = j * BUTTON_SPACE - OFFSET
 			if j < 5 then
 				j = j +1
 			else
 				j = 1
 			end
 			levelButton.y = levelsPage[i][2] * BUTTON_SPACE + OFFSET - 10
+			lock.y = levelsPage[i][2] * BUTTON_SPACE + OFFSET - 10
 			levelButton.name = levelsPage[i][1]
 			group:insert(levelButton)
-			--end
+			group:insert(lock)
 		end
 	end
 
