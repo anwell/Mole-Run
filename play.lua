@@ -235,7 +235,7 @@ levels[11] =
 
 levels[16] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2},
-{2,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0,2,0},
+{2,0,0,0,0,0,8,0,5,0,0,0,0,0,0,0,0,2,0},
 {2,0,7,0,0,0,7,0,0,0,7,7,7,7,7,0,0,2,0},
 {2,0,7,0,1,0,7,0,0,0,0,0,7,0,0,0,0,2,0},
 {2,0,7,7,7,7,7,0,0,0,0,0,7,0,0,0,0,2,0},
@@ -249,12 +249,12 @@ levels[16] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 
 levels[17] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2},
-{2,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0},
-{2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{2,1,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,2,0},
 {2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0},
 {2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0},
 {2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0},
 {2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0},
+{2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,0,2,0},
 {2,3,3,3,3,7,7,7,0,7,7,7,3,3,3,3,3,2,0},
 {2,2,2,3,3,7,3,7,0,7,3,7,3,3,3,2,2,2,0},
 {2,6,2,3,3,7,6,7,5,7,6,7,3,3,3,2,6,2,0},
@@ -869,6 +869,7 @@ end
 
 function explodeBomb(bomb)
 
+	bomb.isVisible = false
 	local explosionRight = display.newRect(0,0,0,0)
 	local explosionRightUp = display.newRect(0,0,0,0)
 	local explosionUp = display.newRect(0,0,0,0)
@@ -946,9 +947,15 @@ local function gravityBoulders()
 				if hasCollided(possibleBoulder, player) and boulders[i].falling == true then
 					transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
 				end
-				for i = 1, #enemies do
-					if hasCollided(possibleBoulder, enemies[i]) and boulders[i].falling == true then
+				for ienemies = 1, #enemies do
+					if hasCollided(possibleBoulder, enemies[ienemies]) and boulders[i].falling == true then
 						transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
+					end
+				end
+				for ibombs = 1, #bombs do
+					if hasCollided(possibleBoulder, bombs[ibombs]) and boulders[i].falling == true then
+						transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
+						explodeBomb(bombs[ibombs])
 					end
 				end
 				possibleBoulder:removeSelf()

@@ -11,7 +11,7 @@ local scene = storyboard.newScene()
 storyboard.score = 0
 
 local background = display.newImage ("images/dirtBackground.png")
-local levelsTitle = display.newText( "Levels", 0, 0, native.systemFontBold, 40 )
+local levelsTitle = display.newText( "Levels (11-20)", 0, 0, native.systemFontBold, 40 )
 
 local page = 1
 local BUTTON_SPACE = 90
@@ -20,8 +20,8 @@ local OFFSET = 30
 local buildLevelsPage
 
 local levelsPages = {}
-levelsPages[1] = {{1,2,3,4,5},
-				 {6,7,8,9,10},}
+levelsPages[1] = {{11,12,13,14,15},
+				 {16,17,18,19,20},}
 
 local onMenuButton = function(event)
 	if event.phase == "press" then
@@ -47,18 +47,17 @@ local scoresButton = ui.newButton{
 	onEvent = onScoresButton
 }
 
-local nextPageButton = function(event)
+local onPreviousPageButton = function(event)
 	if event.phase == "press" then
-		storyboard.gotoScene( "levels", "slideUp", 800  )
+		storyboard.gotoScene( "levels", "slideRight", 800  )
 	end
 end
 
-local nextPageButton = ui.newButton{
-	default = "images/Dpad Key right.png",
-	over = "images/Dpad Key right.png",
-	onEvent = onScoresButton
+local previousPageButton = ui.newButton{
+	default = "images/Dpad Key left.png",
+	over = "images/Dpad Key left.png",
+	onEvent = onPreviousPageButton
 }
-
 ---------------------------------------------------------------------------------
 
 -- Called when the scene's view does not exist:
@@ -91,7 +90,7 @@ function scene:createScene( event )
 	group:insert(levelsTitle)
 	group:insert(menuButton)
 	group:insert(scoresButton)
-	group:insert(nextPageButton)
+	group:insert(previousPageButton)
 	buildLevelsPage(levelsPages[page])
 	levelsTitle.x = 240
 	levelsTitle.y = 30
@@ -99,8 +98,8 @@ function scene:createScene( event )
 	menuButton.y = 275
 	scoresButton.x = 100
 	scoresButton.y = 275
-	nextPageButton.x = 450
-	nextPageButton.y = 155
+	previousPageButton.x = 50
+	previousPageButton.y = 35
 	-----------------------------------------------------------------------------
 		
 	--	CREATE display objects and add them to 'group' here.

@@ -11,7 +11,7 @@ local scene = storyboard.newScene()
 storyboard.score = 0
 
 local background = display.newImage ("images/dirtBackground.png")
-local levelsTitle = display.newText( "Levels", 0, 0, native.systemFontBold, 40 )
+local levelsTitle = display.newText( "Levels (1-10)", 0, 0, native.systemFontBold, 40 )
 
 local page = 1
 local BUTTON_SPACE = 90
@@ -47,16 +47,16 @@ local scoresButton = ui.newButton{
 	onEvent = onScoresButton
 }
 
-local nextPageButton = function(event)
+local onNextPageButton = function(event)
 	if event.phase == "press" then
-		storyboard.gotoScene( "levels", "slideUp", 800  )
+		storyboard.gotoScene( "levels2", "slideLeft", 800  )
 	end
 end
 
 local nextPageButton = ui.newButton{
 	default = "images/Dpad Key right.png",
 	over = "images/Dpad Key right.png",
-	onEvent = onScoresButton
+	onEvent = onNextPageButton
 }
 
 ---------------------------------------------------------------------------------
@@ -99,8 +99,8 @@ function scene:createScene( event )
 	menuButton.y = 275
 	scoresButton.x = 100
 	scoresButton.y = 275
-	nextPageButton.x = 450
-	nextPageButton.y = 155
+	nextPageButton.x = 430
+	nextPageButton.y = 35
 	-----------------------------------------------------------------------------
 		
 	--	CREATE display objects and add them to 'group' here.
