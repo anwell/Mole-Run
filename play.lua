@@ -63,6 +63,9 @@ local bombs = display.newGroup()
 local stones = display.newGroup()
 local enemies = display.newGroup()
 
+local rewardSFX = media.newEventSound("sounds/reward.mp3")
+local explosionSFX = media.newEventSound("sounds/explosion.wav")
+
 local explodeBomb
 local snapPlayerToGrid
 
@@ -505,6 +508,9 @@ end
 
 local function killPlayer()
 	if player.alive == true then
+		if volume then 
+			media.playEventSound(explosionSFX)
+		end
 		player.alive = false
 		dpadGroup.isVisible = false
 		player.lives = player.lives - 1
@@ -918,6 +924,9 @@ local function testCollisions()
 		end	
 	end
 	if hasCollided(door, key) then
+		if volume then
+			media.playEventSound(rewardSFX)
+		end
 		door.open = true
 		door:play()
 		key.isVisible = false
@@ -1013,7 +1022,9 @@ local function subtractTime()
 end
 
 function explodeBomb(bomb)
-
+	if volume then 
+		media.playEventSound(explosionSFX)
+	end
 	bomb.isVisible = false
 	local explosionRight = display.newRect(0,0,0,0)
 	local explosionRightUp = display.newRect(0,0,0,0)
@@ -1383,10 +1394,6 @@ end
 local number = add2Numbers(2, 3)
 
 
-
-
-
-
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	local group = self.view
@@ -1400,6 +1407,12 @@ function scene:enterScene( event )
 	gravityTimer = timer.performWithDelay(200,gravityBoulders,0)
 
 	Runtime:addEventListener("enterFrame", testCollisions)
+
+	if audio.getSessionProperty( audio.OtherAudioIsPlaying  ) == 1 then 
+    	audio.setSessionProperty(audio.MixMode, audio.AmbientMixMode)
+		media.setSoundVolume(0)
+	end
+end
 end
 
 

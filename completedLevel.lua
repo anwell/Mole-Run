@@ -21,10 +21,12 @@ levelScore.x = 240
 local timeBonusText = display.newText("Time Bonus: "..timeBonus,240,150,"Courier",20)
 timeBonusText:setReferencePoint(display.CenterReferencePoint)
 timeBonusText.x = 240
+local completeAddBonus
 
 local onNextLevelButton = function(event)
 	if event.phase == "press" then
 		if currentLevel - 1 < storyboard.lastLevel then
+			completeAddBonus()
 			storyboard.score = score
 			storyboard.timeBonus = 0
 			storyboard.gotoScene( "play", "slideLeft", 800  )
@@ -54,6 +56,14 @@ local levelsButton = ui.newButton{
 	onEvent = onLevelsButton
 }
 
+function completeAddBonus()
+		timer.pause(addBonusTimer)
+		score = score + timeBonus
+		timeBonus = 0
+		levelScore.text = score
+		timeBonusText.text = "Time Bonus: "..timeBonus
+		background:removeEventListener("touch", completeAddBonus)
+	end
 
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
@@ -118,14 +128,6 @@ function scene:enterScene( event )
 	end
 	addBonusTimer = timer.performWithDelay(1, addBonus, 0)
 
-	local function completeAddBonus()
-		timer.pause(addBonusTimer)
-		score = score + timeBonus
-		timeBonus = 0
-		levelScore.text = score
-		timeBonusText.text = "Time Bonus: "..timeBonus
-		background:removeEventListener("touch", completeAddBonus)
-	end
 	background:addEventListener("touch", completeAddBonus)
 	-----------------------------------------------------------------------------
 		

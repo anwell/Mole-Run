@@ -29,33 +29,16 @@ local backButton = widget.newButton{
 backButton.x = 240
 backButton.y = 280
 
---  onMuteButton = function(event)
--- 	if event.phase == "release" then
--- 		-- --storyboard.gotoScene( "menu", "slideLeft", 800  )
--- 		-- muteSound:setLabel("Turn sound on")
--- 		if media.getSoundVolume() == 0 then
--- 			media.setSoundVolume(100)
--- 			print("??")
--- 		else
--- 			media.setSoundVolume(0)
--- 			print("not wokring")
--- 		end
--- 	end
--- end
-
---  muteSound = widget.newButton{
---  	-- default = {255, 255, 255, 255},
---  	-- over = {0},
---  	labelColor = {default = {255, 255, 136, 255}, over = {0}},
---  	defaultColor = {124, 47, 47, 255},
--- 	label = "Turn sound off",
--- 	onEvent = onMuteButton
--- }
--- muteSound.x = 240
--- muteSound.y = 100
-
  onMuteButton = function(event)
-	os.remove(system.pathForFile( "levelInfoTable.json", system.DocumentsDirectory ))
+	if event.phase == "release" then
+		-- --storyboard.gotoScene( "menu", "slideLeft", 800  )
+		-- muteSound:setLabel("Turn sound on")
+		if media.getSoundVolume() == 0 then
+			media.setSoundVolume(100)
+		else
+			media.setSoundVolume(0)
+		end
+	end
 end
 
  muteSound = widget.newButton{
@@ -63,19 +46,34 @@ end
  	-- over = {0},
  	labelColor = {default = {255, 255, 136, 255}, over = {0}},
  	defaultColor = {124, 47, 47, 255},
-	label = "Reset locked levels",
+	label = "Turn sound off",
 	onEvent = onMuteButton
 }
 muteSound.x = 240
 muteSound.y = 100
 
--- local function checkVolume()
--- 	if media.getSoundVolume() == 0 then
--- 		muteSound:setLabel("Turn sound on")
--- 	else
--- 		muteSound:setLabel("Turn sound off")
--- 	end
--- end
+ onMuteButton = function(event)
+	os.remove(system.pathForFile( "levelInfoTable.json", system.DocumentsDirectory ))
+end
+
+--  muteSound = widget.newButton{
+--  	-- default = {255, 255, 255, 255},
+--  	-- over = {0},
+--  	labelColor = {default = {255, 255, 136, 255}, over = {0}},
+--  	defaultColor = {124, 47, 47, 255},
+-- 	label = "Reset locked levels",
+-- 	onEvent = onMuteButton
+-- }
+-- muteSound.x = 240
+-- muteSound.y = 100
+
+local function checkVolume()
+	if media.getSoundVolume() == 0 then
+		muteSound:setLabel("Turn sound on")
+	else
+		muteSound:setLabel("Turn sound off")
+	end
+end
 
 function onClearScoresButton(event)
 	if event.phase == "release" then
@@ -130,7 +128,7 @@ end
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	local group = self.view
-	-- Runtime:addEventListener("enterFrame", checkVolume)
+	 Runtime:addEventListener("enterFrame", checkVolume)
 	-----------------------------------------------------------------------------
 		
 	--	INSERT code here (e.g. start timers, load audio, start listeners, etc.)

@@ -27,7 +27,7 @@ local resumeButton = ui.newButton{
 
 local onMenuButton = function(event)
 	if event.phase == "press" then
-		storyboard.gotoScene( "menu", "slideDown", 800  )
+		storyboard.gotoScene( "quit", "slideDown", 800  )
 	end
 end
 
