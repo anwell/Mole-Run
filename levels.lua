@@ -100,7 +100,7 @@ function scene:createScene( event )
 	scoresButton.x = 100
 	scoresButton.y = 275
 	nextPageButton.x = 450
-	nextPageButton.y = 200
+	nextPageButton.y = 155
 	-----------------------------------------------------------------------------
 		
 	--	CREATE display objects and add them to 'group' here.
