@@ -133,14 +133,12 @@ function scene:createScene( event )
 				over = "images/Level Button"..levelsPage[i][1]..".png",
 				onPress = onLevelButton
 				}
-				print(i)
 			else
 				levelButton = widget.newButton{
 				default = "images/Level Button"..levelsPage[i][1]..".png",
 				over = "images/Level Button"..levelsPage[i][1]..".png",
 				onPress = doNothing
 				}
-				print("fasdf")
 				lock.isVisible = true
 			end
 			levelButton.x = j * BUTTON_SPACE - OFFSET

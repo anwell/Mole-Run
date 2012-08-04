@@ -60,16 +60,11 @@ end
 function loadData()	
 	local file = io.open( filePath, "r" )
 	local contents
-	if file == nil then
-		print("pleasepleaseplease")
-	end
 	if file then
-		print("blab")
 		contents = file:read("*a")
 		--levelInfo = nil
 		levelInfo = json.decode(contents)
 		if #levelInfo == 0 then
-			print("hooray")
 		end
 		io.close(file)
 	end
@@ -133,14 +128,12 @@ function scene:createScene( event )
 				over = "images/Level Button"..levelsPage[i][1]..".png",
 				onPress = onLevelButton
 				}
-				print(i)
 			else
 				levelButton = widget.newButton{
 				default = "images/Level Button"..levelsPage[i][1]..".png",
 				over = "images/Level Button"..levelsPage[i][1]..".png",
 				onPress = doNothing
 				}
-				print("fasdf")
 				lock.isVisible = true
 			end
 			levelButton.x = j * BUTTON_SPACE - OFFSET

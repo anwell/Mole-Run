@@ -68,6 +68,7 @@ local explosionSFX = media.newEventSound("sounds/explosion.wav")
 
 local explodeBomb
 local snapPlayerToGrid
+local gravityObjects
 
 -- 0: empty
 -- 1: player
@@ -329,7 +330,7 @@ levels[17] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 levels[18] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2},
 {2,1,0,0,0,0,0,0,0,8,0,0,0,0,0,0,0,2,0},
-{2,0,0,0,0,7,7,7,7,7,7,7,0,0,0,0,0,2,0},
+{2,0,7,7,7,7,7,7,7,7,7,7,0,0,0,0,0,2,0},
 {2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,2,0},
 {2,0,0,6,0,0,0,0,0,0,0,0,0,0,0,3,7,2,0},
 {2,0,0,0,0,0,0,0,0,0,0,0,0,0,3,7,2,2,0},
@@ -461,10 +462,10 @@ end
 
 -- rectangle based
 local function hasCollidedRectangle(obj1, obj2)
-    if obj1 == nil then
+    if obj1 == nil or obj1.isVisible == false then
         return false
     end
-    if obj2 == nil then
+    if obj2 == nil or obj2.isVisible == false then
         return false
     end
     local left = obj1.contentBounds.xMin <= obj2.contentBounds.xMin and obj1.contentBounds.xMax >= obj2.contentBounds.xMin
@@ -600,7 +601,7 @@ local function killPlayer()
 			player:play()
 			local function retry()
 				storyboard.score = score
-				Runtime:removeEventListener("enterFrame", gravityBoulders)
+				Runtime:removeEventListener("enterFrame", gravityObjects)
 				Runtime:removeEventListener("enterFrame", testCollisions)
 				storyboard.currentLevel = currentLevel
 				storyboard.gotoScene( "retry", "slideLeft", 800 )
@@ -699,6 +700,7 @@ local function canPushBoulder()
 			boulders[i].y = possibleBoulder.y
 			possiblePlayer:removeSelf()
 			possibleBoulder:removeSelf()
+			gravityObjects()
 			return true
 		end
 	end
@@ -713,6 +715,7 @@ local function canPushBoulder()
 		end
 		key.x = possibleKey.x
 		key.y = possibleKey.y
+		gravityObjects()
 		possibleKey:removeSelf()
 		return true
 	end
@@ -732,6 +735,7 @@ local function canPushBoulder()
 			end
 			bombs[i].x = possibleBomb.x
 			bombs[i].y = possibleBomb.y
+			gravityObjects()
 			possibleBomb:removeSelf()
 			return true
 		end
@@ -981,7 +985,7 @@ local function testCollisions()
 			score = score + SCORE_MULTIPLIER * player.lives
 			storyboard.score = score
 			storyboard.timeBonus = SCORE_MULTIPLIER * timerText
-			Runtime:removeEventListener("enterFrame", gravityBoulders)
+			Runtime:removeEventListener("enterFrame", gravityObjects)
 			Runtime:removeEventListener("enterFrame", testCollisions)
 			storyboard.gotoScene( "completedLevel", "slideLeft", 800 )
 		end	
@@ -1156,26 +1160,30 @@ function explodeBomb(bomb)
 	explosionRightDown:removeSelf()
 end
 
-local function gravityBoulders()
+function gravityObjects()
 	--if gameState then
 	if #boulders > 0 then
 		for i = 1, #boulders do
 			if canGravityObject(boulders[i]) then
-				transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
+				--transition.to(boulders[i], {time=0, x=boulders[i].y, y=boulders[i].y + TILE_WIDTH})
+				boulders[i].y = boulders[i].y + TILE_WIDTH
 				boulders[i].falling = true
 			elseif boulders[i].falling == true then
 				local possibleBoulder = createPossibleObject(boulders[i], DIRECTION_DOWN)
 				if hasCollided(possibleBoulder, player) and boulders[i].falling == true then
-					transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
+					boulders[i].y = boulders[i].y + TILE_WIDTH
+					--transition.to(boulders[i], {time=0, x=boulders[i].y, y=boulders[i].y + TILE_WIDTH})
 				end
 				for ienemies = 1, #enemies do
 					if hasCollided(possibleBoulder, enemies[ienemies]) and boulders[i].falling == true then
-						transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
+						boulders[i].y = boulders[i].y + TILE_WIDTH
+						--transition.to(boulders[i], {time=0, x=boulders[i].y, y=boulders[i].y + TILE_WIDTH})
 					end
 				end
 				for ibombs = 1, #bombs do
 					if hasCollided(possibleBoulder, bombs[ibombs]) and boulders[i].falling == true then
-						transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
+						boulders[i].y = boulders[i].y + TILE_WIDTH
+						--transition.to(boulders[i], {time=0, x=boulders[i].y, y=boulders[i].y + TILE_WIDTH})
 						explodeBomb(bombs[ibombs])
 					end
 				end
@@ -1186,12 +1194,14 @@ local function gravityBoulders()
 		end
 	end
 	if canGravityObject(key) then
-		transition.to(key, {time=0, x=key.x, y=key.y + TILE_WIDTH})
+		--transition.to(key, {time=0, x=key.x, y=key.y + TILE_WIDTH})
+		key.y = key.y + TILE_WIDTH
 	end
 	if #bombs > 0 then
 		for i = 1, #bombs do
 			if canGravityObject(bombs[i]) and bombs[i].exploded == false then
-				transition.to(bombs[i], {time=0, x=bombs[i].x, y=bombs[i].y + TILE_WIDTH})
+				bombs[i].y = bombs[i].y + TILE_WIDTH
+				--transition.to(bombs[i], {time=0, x=bombs[i].x, y=bombs[i].y + TILE_WIDTH})
 				bombs[i].falling = true
 			elseif bombs[i].falling == true then
 				bombs[i].exploded = true
@@ -1462,7 +1472,7 @@ local number = add2Numbers(2, 3)
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	local group = self.view
-	--Runtime:addEventListener("enterFrame", gravityBoulders)\
+	--Runtime:addEventListener("enterFrame", gravityObjects)\
 	storyboard.removeScene("completedLevel")
 	storyboard.removeScene("levels")
 	storyboard.removeScene("levels2")
@@ -1470,7 +1480,7 @@ function scene:enterScene( event )
 
 	countdownTimer = timer.performWithDelay(1000,subtractTime,0)
 	enemyTimer = timer.performWithDelay(300,moveEnemy,0)
-	gravityTimer = timer.performWithDelay(200,gravityBoulders,0)
+	gravityTimer = timer.performWithDelay(200,gravityObjects,0)
 
 	Runtime:addEventListener("enterFrame", testCollisions)
 
@@ -1488,7 +1498,7 @@ function scene:exitScene( event )
 	timer.pause(enemyTimer)
 	timer.pause(gravityTimer)
 
-	--Runtime:removeEventListener("enterFrame", gravityBoulders)
+	--Runtime:removeEventListener("enterFrame", gravityObjects)
 	Runtime:removeEventListener("enterFrame", testCollisions)
 end
 
@@ -1496,7 +1506,7 @@ end
 -- Called prior to the removal of scene's "view" (display group)
 function scene:destroyScene( event )
 	local group = self.view
-	--Runtime:removeEventListener("enterFrame", gravityBoulders)
+	--Runtime:removeEventListener("enterFrame", gravityObjects)
 	--Runtime:removeEventListener("enterFrame", testCollisions)
 end
 
