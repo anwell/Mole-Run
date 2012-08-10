@@ -45,6 +45,16 @@ local levelInfo = {
 	{18, 2,false},
 	{19,2, false},
 	{20, 2,false},
+	{21, 1, false},
+	{22, 1, false},
+	{23, 1, false},
+	{24, 1, false},
+	{25, 1, false},
+	{26, 2,false},
+	{27, 2,false},
+	{28, 2,false},
+	{29, 2,false},
+	{30, 2,false},
 }
 
 function saveData()
@@ -106,6 +116,18 @@ local nextPageButton = widget.newButton{
 	onEvent = onNextPageButton
 }
 
+local onPreviousPageButton = function(event)
+	if event.phase == "press" then
+		storyboard.gotoScene( "levels", "slideRight", 800  )
+	end
+end
+
+local previousPageButton = ui.newButton{
+	default = "images/Dpad Key left.png",
+	over = "images/Dpad Key left.png",
+	onEvent = onPreviousPageButton
+}
+
 local function doNothing()
 end
 
@@ -129,15 +151,23 @@ function scene:createScene( event )
 			lock.isVisible = false
 			if levelsPage[i][3] then
 				levelButton = widget.newButton{
-				default = "images/Level Button"..levelsPage[i][1]..".png",
-				over = "images/Level Button"..levelsPage[i][1]..".png",
-				onPress = onLevelButton
+				default = "images/level_button_blank.png",
+				over = "images/level_button_blank.png",
+				onPress = onLevelButton,
+				label = levelsPage[i][1],
+				font = "Bauhaus 93",
+				fontSize = 42,
+				labelColor = {default = {255, 255, 0, 255}, over = {0}}
 				}
 			else
 				levelButton = widget.newButton{
-				default = "images/Level Button"..levelsPage[i][1]..".png",
-				over = "images/Level Button"..levelsPage[i][1]..".png",
-				onPress = doNothing
+				default = "images/level_button_blank.png",
+				over = "images/level_button_blank.png",
+				onPress = doNothing,
+				label = levelsPage[i][1],
+				font = "Bauhaus 93",
+				fontSize = 42,
+				labelColor = {default = {255, 255, 0, 255}, over = {0}}
 				}
 				lock.isVisible = true
 			end
@@ -164,6 +194,7 @@ function scene:createScene( event )
 	group:insert(menuButton)
 	group:insert(scoresButton)
 	group:insert(nextPageButton)
+	group:insert(previousPageButton)
 	--buildLevelsPage(levelsPages[page])
 	loadData()
 	buildLevelsPage(levelInfo)
@@ -175,6 +206,9 @@ function scene:createScene( event )
 	scoresButton.y = 275
 	nextPageButton.x = 430
 	nextPageButton.y = 35
+	previousPageButton.x = 50
+	previousPageButton.y = 35
+	previousPageButton.isVisible = false
 	-----------------------------------------------------------------------------
 		
 	--	CREATE display objects and add them to 'group' here.

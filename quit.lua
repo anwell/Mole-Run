@@ -10,7 +10,7 @@ local scene = storyboard.newScene()
 local score = storyboard.score
 
 local grid = {}
-print("f"..#grid)
+--print("f"..#grid)
 
 local loadData, saveData, compare
 local filePath = system.pathForFile( "scores.json", system.DocumentsDirectory )
@@ -19,17 +19,17 @@ local nameTextBox
 
 local background = display.newImage ("images/dirtBackground.png")
 
-local levelScore = display.newText("score: "..score,240,70,"Courier",30)
+local levelScore = display.newText("score: "..score,240,147,"Courier",30)
 levelScore:setReferencePoint(display.CenterReferencePoint)
 levelScore.x = 240
-local nameLabel = display.newText("Enter your name:",240,120,native.systemFont,15)
-nameLabel:setReferencePoint(display.CenterReferencePoint)
-nameLabel.x = 240
+-- local nameLabel = display.newText("Enter your name:",240,120,native.systemFont,15)
+-- nameLabel:setReferencePoint(display.CenterReferencePoint)
+-- nameLabel.x = 240
 
 local pauseText = display.newText( "Save score", 0, 0, native.systemFontBold, 40 )
 
 local currentLevel = storyboard.currentLevel
-print("something"..currentLevel)
+--print("something"..currentLevel)
 
 local onResumeButton = function(event)
 	if event.phase == "press" then
@@ -51,7 +51,7 @@ local onMenuButton = function(event)
 		if #grid > 5 then
 			for i = 5, #grid do
 				table.remove(grid, i)
-				print("test")
+				--print("test")
 			end
 		end
 		saveData()
@@ -97,12 +97,15 @@ end
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
 	local group = self.view
+	-- if score == 0 then
+	-- 	storyboard.gotoScene("menu", "slideDown", 800)
+	-- end
 	group:insert(background)
 	group:insert(resumeButton)
 	group:insert(menuButton)
 	group:insert(levelScore)
 	group:insert(pauseText)
-	group:insert(nameLabel)
+	--group:insert(nameLabel)
 	resumeButton.x = 240
 	resumeButton.y = 280
 	menuButton.x = 240
@@ -128,7 +131,7 @@ function scene:enterScene( event )
 	local group = self.view
 	
 	background:addEventListener("touch", removeKeyboard)
-	nameTextBox = native.newTextField(130, 147, 220, 36)
+	nameTextBox = native.newTextField(130, 70, 220, 36)
 	nameTextBox.text = "Name"
 	-----------------------------------------------------------------------------
 		
