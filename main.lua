@@ -7,8 +7,8 @@ splash = display.newImage("Default.png")
 -- 	main()
 -- end
 
-local sysFonts = native.getFontNames()
-for k,v in pairs(sysFonts) do print(v) end
+-- local sysFonts = native.getFontNames()
+-- for k,v in pairs(sysFonts) do print(v) end
 
 local function main()
    splash:removeEventListener("touch", main)
