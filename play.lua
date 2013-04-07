@@ -288,7 +288,6 @@ killPlayer = function()
 	end
 end
 
-
 local function testPossibleCollision(possibleObject)
 	-- implement door collision yourself
 	for isands = 1, #sands do
@@ -355,25 +354,26 @@ local function testPossibleCollision(possibleObject)
 end
 
 local function testPush(object, possiblePlayer)
-	if hasCollided(object, possiblePlayer) then
-		if player.direction == DIRECTION_UP or player.direction == DIRECTION_DOWN then
-			return false
+	if object.targetx == possiblePlayer.x and object.targety == possiblePlayer.y then
+		-- if player.direction == DIRECTION_UP or player.direction == DIRECTION_DOWN then
+		-- 	return false
+		-- end
+		if canGravityObject(object) then
+			gravityObjects()
+			display.remove(possibleObject)
+			return true
 		end
 		local possibleObject = createPossibleObject(object, player.direction)
-		if testPossibleCollision(possibleObject) == false then
-			if canGravityObject(object) then
-				gravityObjects()
-				display.remove(possibleObject)
-				return true
-			end
-			display.remove(possibleObject)
-			return false
-		end
 		if hasCollided(possibleObject, door) and object ~= key then
 			display.remove(possibleObject)
 			return false
 		end
-		transition.to(object, {time=0, x=possibleObject.x})
+		if testPossibleCollision(possibleObject) == false then
+			display.remove(possibleObject)
+			return false
+		end
+		object.targetx = possibleObject.x
+		transition.to(object, {time=SPEED, x=object.targetx})
 		gravityObjects()
 		display.remove(possibleObject)
 		return true
@@ -669,21 +669,25 @@ function gravityObjects()
 	if #boulders > 0 then
 		for i = 1, #boulders do
 			if canGravityObject(boulders[i]) then
-				transition.to(boulders[i], {time=0, y=boulders[i].y + TILE_WIDTH})
+				boulders[i].targety = boulders[i].y + TILE_WIDTH
+				transition.to(boulders[i], {time=0, y=boulders[i].targety})
 				boulders[i].falling = true
 			elseif boulders[i].falling == true then
 				local possibleBoulder = createPossibleObject(boulders[i], DIRECTION_DOWN)
 				if hasCollided(possibleBoulder, player) and boulders[i].falling == true then
-					transition.to(boulders[i], {time=0, y=boulders[i].y + TILE_WIDTH})
+					boulders[i].targety = boulders[i].y + TILE_WIDTH
+					transition.to(boulders[i], {time=0, y=boulders[i].targety})
 				end
 				for ienemies = 1, #enemies do
 					if hasCollided(possibleBoulder, enemies[ienemies]) and boulders[i].falling == true then
-						transition.to(boulders[i], {time=0, y=boulders[i].y + TILE_WIDTH})
+						boulders[i].targety = boulders[i].y + TILE_WIDTH
+						transition.to(boulders[i], {time=0, y=boulders[i].targety})
 					end
 				end
 				for ibombs = 1, #bombs do
 					if hasCollided(possibleBoulder, bombs[ibombs]) and boulders[i].falling == true then
-						transition.to(boulders[i], {time=0, y=boulders[i].y + TILE_WIDTH})
+						boulders[i].targety = boulders[i].y + TILE_WIDTH
+						transition.to(boulders[i], {time=0, y=boulders[i].targety})
 						explodeBomb(bombs[ibombs])
 					end
 				end
@@ -693,12 +697,14 @@ function gravityObjects()
 		end
 	end
 	if canGravityObject(key) then
-		transition.to(key, {time=0, x=key.x, y=key.y + TILE_WIDTH})
+		key.targety = key.y + TILE_WIDTH
+		transition.to(key, {time=0, x=key.x, y=key.targety})
 	end
 	if #bombs > 0 then
 		for i = 1, #bombs do
 			if canGravityObject(bombs[i]) and bombs[i].exploded == false then
-				transition.to(bombs[i], {time=0, y=bombs[i].y + TILE_WIDTH})
+				bombs[i].targety = bombs[i].y + TILE_WIDTH
+				transition.to(bombs[i], {time=0, y= bombs[i].targety})
 				bombs[i].falling = true
 			elseif bombs[i].falling == true then
 				bombs[i].exploded = true
@@ -862,6 +868,8 @@ function scene:createScene( event )
 					local boulder = display.newImage("images/4.png")
 					boulder.x = TILE_WIDTH * j - OFFSET
 					boulder.y = TILE_WIDTH * i - OFFSET
+					boulder.targetx = boulder.x
+					boulder.targety = boulder.y
 					boulder.falling = false
 					table.insert(boulders, boulder)
 					group:insert(boulder)
@@ -869,6 +877,8 @@ function scene:createScene( event )
 					local bomb = display.newImage("images/5.png")
 					bomb.x = TILE_WIDTH * j - OFFSET
 					bomb.y = TILE_WIDTH * i - OFFSET
+					bomb.targetx = bomb.x
+					bomb.targety = bomb.y
 					bomb.falling = false
 					bomb.exploded = false
 					table.insert(bombs, bomb)
@@ -891,6 +901,8 @@ function scene:createScene( event )
 				elseif(level[i][j] == 8) then 
 					key.x = TILE_WIDTH * j - OFFSET
 					key.y = TILE_WIDTH * i - OFFSET
+					key.targetx = key.x
+					key.targety = key.y
 				elseif(level[i][j] == 9) then 
 					door.x = TILE_WIDTH * j - OFFSET
 					door.y = TILE_WIDTH * i - OFFSET
