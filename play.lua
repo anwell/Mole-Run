@@ -51,8 +51,8 @@ local timeLeft = display.newText(timerText,240,0,native.systemFontBold,20)
 local lives = display.newImage("images/Mole lives.png")
 local suicideButton
 local pauseButton
-local scoreText = display.newText("Sc: "..score,300,0,"Courier",15)
-local levelText = display.newText("Lv: "..currentLevel,100,0,"Courier",15)
+local scoreText = display.newText("Sc: "..score,300,0,"Courier New",15)
+local levelText = display.newText("Lv: "..currentLevel,100,0,"Courier New",15)
 
 local dpadGroup = display.newGroup()
 local headerGroup = display.newGroup()
@@ -152,7 +152,7 @@ end
 
 
 local function createPossibleObject (object, direction)
-	local possibleObject = display.newRect( 0, 0, 0, 0 )
+	local possibleObject = display.newRect( 0, 0, TILE_WIDTH, TILE_WIDTH )
 	possibleObject.x = object.x
 	possibleObject.y = object.y
 	if direction == DIRECTION_LEFT then
@@ -171,21 +171,21 @@ local function canMove()
 	local possiblePlayer = createPossibleObject(player, player.direction)
 	for i = 1, #walls do
 		if hasCollided(possiblePlayer, walls[i]) then
-			possiblePlayer:removeSelf()
+			display.remove(possiblePlayer)
 			return false
 		end
 	end
 	for i = 1, #stones do
 		if hasCollided(possiblePlayer, stones[i]) then
-			possiblePlayer:removeSelf()
+			display.remove(possiblePlayer)
 			return false
 		end
 	end
 	if hasCollided(possiblePlayer, door) and (door.open == false) then
-		possiblePlayer:removeSelf()
+		display.remove(possiblePlayer)
 		return false
 	end
-	possiblePlayer:removeSelf()
+	display.remove(possiblePlayer)
 	return true
 end
 
@@ -362,15 +362,20 @@ local function testPush(object, possiblePlayer)
 		local possibleObject = createPossibleObject(object, player.direction)
 		if testPossibleCollision(possibleObject) == false then
 			if canGravityObject(object) then
+				gravityObjects()
+				display.remove(possibleObject)
 				return true
 			end
+			display.remove(possibleObject)
 			return false
 		end
 		if hasCollided(possibleObject, door) and object ~= key then
+			display.remove(possibleObject)
 			return false
 		end
 		transition.to(object, {time=0, x=possibleObject.x})
 		gravityObjects()
+		display.remove(possibleObject)
 		return true
 	end
 end
@@ -380,19 +385,23 @@ local function canPushObject()
 	for i = 1, #boulders do
 		local pushTest = testPush(boulders[i], possiblePlayer) 
 		if pushTest ~= nil then
+			possiblePlayer:removeSelf()
 			return pushTest
 		end
 	end
 	for i = 1, #bombs do
 		local pushTest = testPush(bombs[i], possiblePlayer) 
 		if pushTest ~= nil then
+			possiblePlayer:removeSelf()
 			return pushTest
 		end
 	end
 	local pushTest = testPush(key, possiblePlayer) 
 	if pushTest ~= nil then
+		possiblePlayer:removeSelf()
 		return pushTest
 	end
+	possiblePlayer:removeSelf()
 	return true
 end
 

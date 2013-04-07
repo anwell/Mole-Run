@@ -15,10 +15,10 @@ local timeBonus = storyboard.timeBonus
 local levelCompleteText = display.newText("Level "..(currentLevel-1).." Complete!",200,75,display.systemFontBold,20)
 levelCompleteText:setReferencePoint(display.CenterReferencePoint)
 levelCompleteText.x = 240
-local levelScore = display.newText(score,240,100,"Courier",30)
+local levelScore = display.newText(score,240,100,"Courier New",30)
 levelScore:setReferencePoint(display.CenterReferencePoint)
 levelScore.x = 240
-local timeBonusText = display.newText("Time Bonus: "..timeBonus,240,150,"Courier",20)
+local timeBonusText = display.newText("Time Bonus: "..timeBonus,240,150,"Courier New",20)
 timeBonusText:setReferencePoint(display.CenterReferencePoint)
 timeBonusText.x = 240
 local completeAddBonus
