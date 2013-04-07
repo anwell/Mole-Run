@@ -56,7 +56,7 @@ function scene:createScene( event )
 	end
 	local loadLevels = function(event)
 		if event.phase == "press" then
-			storyboard.gotoScene( "levels", "slideUp", 800 )
+			storyboard.gotoScene( "levels1", "slideUp", 800 )
 		end
 	end
 	local function loadButtons()
@@ -103,14 +103,16 @@ function scene:enterScene( event )
 	storyboard.removeScene("quit")
 	storyboard.removeScene("scores")
 	storyboard.removeScene("play")
-	media.playSound("sounds/Pinball Spring.mp3", true)
+	if storyboard.sound == nil then
+		media.playSound("sounds/Pinball Spring.mp3", true)
+	end
+	storyboard.sound = true
 end
 
 
 -- Called when scene is about to move offscreen:
 function scene:exitScene( event )
 	local group = self.view
-	storyboard.volume = media.getSoundVolume()
 	-----------------------------------------------------------------------------
 	
 	--	INSERT code here (e.g. stop timers, remove listeners, unload sounds, etc.)

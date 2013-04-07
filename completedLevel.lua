@@ -113,7 +113,9 @@ end
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	local group = self.view
+	print(1)
 	storyboard.removeScene( "play")
+	print(2)
 	--media.playSound("sounds/Speed Kills.WAV", true)
 	local function addBonus()
 		if timeBonus > 0 then

@@ -16,79 +16,57 @@ local onMuteButton, onClearScoresButton
 local filePath = system.pathForFile( "scores.json", system.DocumentsDirectory )
 
 local onBackButton = function(event)
-	if event.phase == "press" then
-		storyboard.gotoScene( "menu", "slideLeft", 800  )
-	end
+	storyboard.gotoScene( "menu", "slideLeft", 800  )
 end
 
 local backButton = widget.newButton{
-	default = "images/MenuButton.png",
-	over = "images/MenuButtonselect.png",
-	onEvent = onBackButton
+	defaultFile = "images/MenuButton.png",
+	overFile = "images/MenuButtonselect.png",
+	onPress = onBackButton
 }
 backButton.x = 240
 backButton.y = 280
 
- onMuteButton = function(event)
-	if event.phase == "release" then
-		-- --storyboard.gotoScene( "menu", "slideLeft", 800  )
-		-- muteSound:setLabel("Turn sound on")
-		if media.getSoundVolume() == 0 then
-			media.setSoundVolume(100)
-		else
-			media.setSoundVolume(0)
-		end
+local function checkSound()
+	if storyboard.sound then
+		muteSound:setLabel("Turn sound off")
+	else
+		muteSound:setLabel("Turn sound on")
 	end
 end
+ onMuteButton = function(event)
+	if storyboard.sound then
+		media.pauseSound()
+		storyboard.sound = false
+	else
+		media.playSound()
+		storyboard.sound = true
+	end
+	checkSound()
+end
+
 
  muteSound = widget.newButton{
- 	-- default = {255, 255, 255, 255},
- 	-- over = {0},
- 	labelColor = {default = {255, 255, 136, 255}, over = {0}},
- 	defaultColor = {124, 47, 47, 255},
+ 	defaultFile = "images/blankOptionsButton.png",
 	label = "Turn sound off",
-	onEvent = onMuteButton
+	onPress = onMuteButton,
+	font = "Bauhaus 93",
+	labelColor = {default = {255, 255, 0, 255}, over = {0}}
 }
 muteSound.x = 240
 muteSound.y = 100
 
- onMuteButton = function(event)
-	os.remove(system.pathForFile( "levelInfoTable.json", system.DocumentsDirectory ))
-end
-
---  muteSound = widget.newButton{
---  	-- default = {255, 255, 255, 255},
---  	-- over = {0},
---  	labelColor = {default = {255, 255, 136, 255}, over = {0}},
---  	defaultColor = {124, 47, 47, 255},
--- 	label = "Reset locked levels",
--- 	onEvent = onMuteButton
--- }
--- muteSound.x = 240
--- muteSound.y = 100
-
-local function checkVolume()
-	if media.getSoundVolume() == 0 then
-		muteSound:setLabel("Turn sound on")
-	else
-		muteSound:setLabel("Turn sound off")
-	end
-end
-
 function onClearScoresButton(event)
-	if event.phase == "release" then
-		print("hey")
-		os.remove(filePath)
-	end
+	os.remove(filePath)
 end
 
 clearScoresButton = widget.newButton{
- 	-- default = {255, 255, 255, 255},
- 	-- over = {0},
- 	labelColor = {default = {255, 255, 136, 255}, over = {0}},
- 	defaultColor = {124, 47, 47, 255},
+	width = 200,
+ 	defaultFile = "images/blankOptionsButton.png",
 	label = "Clear high scores",
-	onEvent = onClearScoresButton
+	onPress = onMuteButton,
+	font = "Bauhaus 93",
+	labelColor = {default = {255, 255, 0, 255}, over = {0}}
 }
 clearScoresButton.x = 240
 clearScoresButton.y = 180
@@ -113,7 +91,7 @@ function scene:createScene( event )
 			storyboard.gotoScene( "menu", "slideRight", 800  )
 			mainGroup.isVisible = true
 		end
-		
+		checkSound()
 		
 	-----------------------------------------------------------------------------
 		
@@ -128,7 +106,7 @@ end
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	local group = self.view
-	 Runtime:addEventListener("enterFrame", checkVolume)
+	 -- Runtime:addEventListener("enterFrame", checkSound)
 	-----------------------------------------------------------------------------
 		
 	--	INSERT code here (e.g. start timers, load audio, start listeners, etc.)
@@ -141,7 +119,7 @@ end
 -- Called when scene is about to move offscreen:
 function scene:exitScene( event )
 	local group = self.view
-	Runtime:removeEventListener("enterFrame", checkVolume)
+	-- Runtime:removeEventListener("enterFrame", checkSound)
 	-----------------------------------------------------------------------------
 	
 	--	INSERT code here (e.g. stop timers, remove listeners, unload sounds, etc.)

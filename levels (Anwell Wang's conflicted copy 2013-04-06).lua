@@ -189,23 +189,23 @@ function scene:createScene( event )
 			lock.isVisible = false
 			if levelsPage[i][3] then
 				levelButton = widget.newButton{
-				default = "images/level_button_blank.png",
-				over = "images/level_button_blank.png",
-				onPress = onLevelButton,
-				label = levelsPage[i][1],
-				font = "Bauhaus 93",
-				fontSize = 42,
-				labelColor = {default = {255, 255, 0, 255}, over = {0}}
+					default = "images/level_button_blank.png",
+					over = "images/level_button_blank.png",
+					onEvent = onLevelButton,
+					-- label = levelsPage[i][1],
+					-- font = "Bauhaus 93",
+					-- fontSize = 42,
+					-- labelColor = {default = {255, 255, 0, 255}, over = {0}}
 				}
 			else
 				levelButton = widget.newButton{
-				default = "images/level_button_blank.png",
-				over = "images/level_button_blank.png",
-				onPress = doNothing,
-				label = levelsPage[i][1],
-				font = "Bauhaus 93",
-				fontSize = 42,
-				labelColor = {default = {255, 255, 0, 255}, over = {0}}
+					default = "images/level_button_blank.png",
+					over = "images/level_button_blank.png",
+					onEvent = doNothing,
+					-- label = levelsPage[i][1],
+					-- font = "Bauhaus 93",
+					-- fontSize = 42,
+					-- labelColor = {default = {255, 255, 0, 255}, over = {0}}
 				}
 				lock.isVisible = true
 			end

@@ -1,19 +1,17 @@
-------------------------------------
--- MOLE RUN
--------------------------------------
 display.setStatusBar (display.HiddenStatusBar)
 
+--require
+require("levelData")
+local levels = levelData.levels
 local ui = require("ui")
 local widget = require "widget"
 require ("sprite")
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
-require("levelData")
-Vector2D = require "Vector2D"
-require "auxFunctions"
-local Dpad = require "dpad"
-local dpad = nil
+storyboard.lastLevel = #levels
+local levelInfo = levelData.levelInfo
 
+--constants
 local STATE_IDLE = "Idle"
 local STATE_WALKING = "Walking"
 local DIRECTION_UP = 1
@@ -29,8 +27,9 @@ local SCORE_MULTIPLIER = 10
 local gameState = false
 local currentLevel = storyboard.currentLevel
 local score = storyboard.score
-local sound = storyboard.sound
+local volume = storyboard.volume > 0
 
+--images
 local background = display.newImage ("images/background.png")
 local playerSheet = sprite.newSpriteSheet("images/mole3.png", TILE_WIDTH, TILE_WIDTH)
 local playerSet = sprite.newSpriteSet (playerSheet, 1, 21)
@@ -46,6 +45,13 @@ sprite.add (enemySet, "enemyright", 4, 3, 100, 0)
 local explosionSheet = sprite.newSpriteSheet("images/Explosion Sprite Sheet.png", TILE_WIDTH * 3, TILE_WIDTH * 3)
 local explosionSet = sprite.newSpriteSet(explosionSheet, 1, 7)
 
+--dpad
+local up
+local down
+local left
+local right
+
+--header info
 local timerText = TIME_LIMIT
 local timeLeft = display.newText(timerText,240,0,native.systemFontBold,20)
 local lives = display.newImage("images/Mole lives.png")
@@ -54,6 +60,7 @@ local pauseButton
 local scoreText = display.newText("Sc: "..score,300,0,"Courier",15)
 local levelText = display.newText("Lv: "..currentLevel,100,0,"Courier",15)
 
+--display groups
 local dpadGroup = display.newGroup()
 local headerGroup = display.newGroup()
 local walls = display.newGroup()
@@ -63,20 +70,16 @@ local bombs = display.newGroup()
 local stones = display.newGroup()
 local enemies = display.newGroup()
 
+--sounds
 local rewardSFX = media.newEventSound("sounds/reward.mp3")
 local explosionSFX = media.newEventSound("sounds/explosion.wav")
 
+--functions
 local explodeBomb
-local canGravityObject
+local snapPlayerToGrid
 local gravityObjects
-local resetGame
-local onTouch
-local killPlayer
 
-local levels = levelData.levels
-local levelInfo = levelData.levelInfo
-storyboard.lastLevel = #levels
-
+--save info
 local json = require 'json'
 local saveData, loadData
 local filePath = system.pathForFile( "levelInfoTable.json", system.DocumentsDirectory )
@@ -108,6 +111,7 @@ function loadData()
 	end
 end
 
+--create objects
 local function createPlayer()
 	sprite.add (playerSet, "playerleft", 8, 2, 100, 0)
 	sprite.add (playerSet, "playerright", 1, 2, 100, 0)
@@ -125,70 +129,36 @@ local function createDoor()
 	door:prepare("dooropen")
 end
 
-local function hasCollided(object1, object2)
-	if (object1.isVisible) and (object2.isVisible) then
-		if (object1.x <= (object2.x + OFFSET) and object2.x <= (object1.x + OFFSET) and  object1.y <= (object2.y + OFFSET) and object2.y <= (object1.y + OFFSET)) then
-			return true
-		end
-	end
-	return false
+local function createHeader()
+	suicideButton = ui.newButton{
+		default = "images/suicide button.png",
+		over = "images/suicide button.png",
+		onEvent = onSuicideButton
+	}
+	pauseButton = ui.newButton{
+		default = "images/pause button.png",
+		over = "images/pause button select.png",
+		onEvent = onPauseButton
+	}
+	scoreText:setReferencePoint(display.TopRightReferencePoint)
+	scoreText.x = 400
+	scoreText.y = 0
+	suicideButton.x = 429
+	suicideButton.y = OFFSET
+	pauseButton.x = 455
+	pauseButton.y = OFFSET
+	headerGroup:insert(suicideButton)
+	headerGroup:insert(timeLeft)
+	headerGroup:insert(lives)
+	headerGroup:insert(pauseButton)
+	headerGroup:insert(levelText)
+	headerGroup:insert(scoreText)
 end
 
-
--- rectangle based
-local function hasCollidedRectangle(obj1, obj2)
-    if obj1 == nil or obj1.isVisible == false then
-        return false
-    end
-    if obj2 == nil or obj2.isVisible == false then
-        return false
-    end
-    local left = obj1.contentBounds.xMin <= obj2.contentBounds.xMin and obj1.contentBounds.xMax >= obj2.contentBounds.xMin
-    local right = obj1.contentBounds.xMin >= obj2.contentBounds.xMin and obj1.contentBounds.xMin <= obj2.contentBounds.xMax
-    local up = obj1.contentBounds.yMin <= obj2.contentBounds.yMin and obj1.contentBounds.yMax >= obj2.contentBounds.yMin
-    local down = obj1.contentBounds.yMin >= obj2.contentBounds.yMin and obj1.contentBounds.yMin <= obj2.contentBounds.yMax
-    return (left or right) and (up or down)
-end
+--collisions
 
 
-local function createPossibleObject (object, direction)
-	local possibleObject = display.newRect( 0, 0, 0, 0 )
-	possibleObject.x = object.x
-	possibleObject.y = object.y
-	if direction == DIRECTION_LEFT then
-		possibleObject.x = object.x - TILE_WIDTH
-	elseif direction == DIRECTION_RIGHT then
-		possibleObject.x = object.x + TILE_WIDTH
-	elseif direction == DIRECTION_UP then
-		possibleObject.y = object.y - TILE_WIDTH
-	elseif direction == DIRECTION_DOWN then
-		possibleObject.y = object.y + TILE_WIDTH
-	end
-	return possibleObject
-end
-
-local function canMove()
-	local possiblePlayer = createPossibleObject(player, player.direction)
-	for i = 1, #walls do
-		if hasCollided(possiblePlayer, walls[i]) then
-			possiblePlayer:removeSelf()
-			return false
-		end
-	end
-	for i = 1, #stones do
-		if hasCollided(possiblePlayer, stones[i]) then
-			possiblePlayer:removeSelf()
-			return false
-		end
-	end
-	if hasCollided(possiblePlayer, door) and (door.open == false) then
-		possiblePlayer:removeSelf()
-		return false
-	end
-	possiblePlayer:removeSelf()
-	return true
-end
-
+--clear game
 local function clearGame()
 	gameState = false
 	player.x = -26
@@ -229,7 +199,8 @@ local function clearGame()
 	sands = display.newGroup()
 end
 
-resetGame = function( event )
+--reset the level if you still have lives left
+local function resetLevel( event )
 	clearGame()
 	buildLevel(levels[currentLevel])
 	dpadGroup.isVisible = true
@@ -241,19 +212,17 @@ resetGame = function( event )
 	player:prepare("playerright")
 	timer.resume(countdownTimer)
 	player.alive = true
-	background:addEventListener("touch", onTouch)
 end
 
-killPlayer = function()
+local function killPlayer()
 	if player.alive == true then
-		if sound then 
+		if volume then 
 			media.playEventSound(explosionSFX)
 		end
 		player.state = STATE_IDLE
 		player.alive = false
 		dpadGroup.isVisible = false
 		player.lives = player.lives - 1
-		background:removeEventListener("touch", onTouch)
 		if player.lives > 0 then
 			timer.pause(countdownTimer)
 			timerText = TIME_LIMIT
@@ -268,7 +237,7 @@ killPlayer = function()
 				lives = display.newImage("images/Mole lives 1.png")
 				headerGroup:insert(lives)
 			end
-			timer.performWithDelay( 1000, resetGame )
+			timer.performWithDelay( 1000, resetLevel )
 
 		else
 			lives:removeSelf()
@@ -289,162 +258,140 @@ killPlayer = function()
 end
 
 
-local function testPossibleCollision(possibleObject)
-	-- implement door collision yourself
-	for isands = 1, #sands do
-		if hasCollided(possibleObject, sands[isands]) and (sands[isands].isVisible == true) then
-			if possibleObject.name == "explosion" then
-				sands[isands].isVisible = false
-			end
-			return false
-		end
-	end
-	for iboulders = 1, #boulders do
-		if hasCollided(possibleObject, boulders[iboulders]) then
-			if possibleObject.name == "explosion" then
-				boulders[iboulders].isVisible = false
-			end
-			return false
-		end
-	end
-	for iwalls = 1, #walls do
-		if hasCollided(possibleObject, walls[iwalls]) then
-			return false
-		end
-	end
-	for istones = 1, #stones do
-		if hasCollided(possibleObject, stones[istones]) then
-			if possibleObject.name == "explosion" then
-				stones[istones].isVisible = false
-			end
-			return false
-		end
-	end
-	for ienemies = 1, #enemies do
-		if hasCollided(possibleObject, enemies[ienemies]) then
-			if possibleObject.name == "explosion" then
-				enemies[ienemies].isVisible = false
-			end
-			return false
-		end
-	end
-	for ibombs = 1, #bombs do
-		if hasCollided(possibleObject, bombs[ibombs]) then
-			if possibleObject.name == "explosion" then
-				explodeBomb(bombs[ibombs])
-				bombs[ibombs].isVisible = false
-			end
-			return false
-		end
-	end
-	if hasCollided(possibleObject, key) then
-		return false
-	end
-	if hasCollided(possibleObject, player) then
-		if possibleObject.name == "explosion" then
-			player:toFront()
-			killPlayer()
-			return true
-		elseif possibleObject.name == "enemy" then
-			player:toFront()
-			return true
-		end
-		return false
-	end
-	return true
-end
-
-local function testPush(object, possiblePlayer)
-	if hasCollided(object, possiblePlayer) then
-		if player.direction == DIRECTION_UP or player.direction == DIRECTION_DOWN then
-			return false
-		end
-		local possibleObject = createPossibleObject(object, player.direction)
-		if testPossibleCollision(possibleObject) == false then
-			if canGravityObject(object) then
-				return true
-			end
-			return false
-		end
-		if hasCollided(possibleObject, door) and object ~= key then
-			return false
-		end
-		transition.to(object, {time=0, x=possibleObject.x})
-		gravityObjects()
-		return true
-	end
-end
-
-local function canPushObject()
-	local possiblePlayer = createPossibleObject(player, player.direction)
-	for i = 1, #boulders do
-		local pushTest = testPush(boulders[i], possiblePlayer) 
-		if pushTest ~= nil then
-			return pushTest
-		end
-	end
-	for i = 1, #bombs do
-		local pushTest = testPush(bombs[i], possiblePlayer) 
-		if pushTest ~= nil then
-			return pushTest
-		end
-	end
-	local pushTest = testPush(key, possiblePlayer) 
-	if pushTest ~= nil then
-		return pushTest
-	end
-	return true
-end
-
-----------------------------------------------------
---MOVING THE PLAYER
-----------------------------------------------------
-
-local move = function(player, event)
-	local direction = player.direction
-	if direction == 0 then 
-		player:prepare("playerright")
-	elseif direction == 1 then
+local function snapPlayerToGrid()
+	if player.direction == DIRECTION_RIGHT then
+		player.j = player.j + 1
+	elseif player.direction == DIRECTION_UP then
 		player.i = player.i - 1
-	elseif direction == 2 then
-		player:prepare("playerleft")
-	elseif direction == 3 then
+	elseif player.direction == DIRECTION_LEFT then
+		player.j = player.j - 1
+	elseif player.direction == DIRECTION_DOWN then
+		player.i = player.i + 1
 	end
+end
 
-	if canPushObject() then
+--MOVING THE PLAYER
+local function changeDirection(test)
+	if hasCollidedRectangle(test, right) then
+		if player.direction == DIRECTION_RIGHT then
+			return
+		else
+			display.getCurrentStage():setFocus(right)
+			player.direction = DIRECTION_RIGHT
+			player:prepare("playerright")
+		end
+	elseif hasCollidedRectangle(test, up) then
+		if player.direction == DIRECTION_UP then
+			return
+		else
+			display.getCurrentStage():setFocus(up)
+			player.direction = DIRECTION_UP
+		end
+	elseif hasCollidedRectangle(test, left) then
+		if player.direction == DIRECTION_LEFT then
+			return
+		else
+			player.direction = DIRECTION_LEFT
+			display.getCurrentStage():setFocus(left)
+			player:prepare("playerleft")
+		end
+	elseif hasCollidedRectangle(test, down) then
+		if player.direction == DIRECTION_DOWN then
+			return
+		else
+			player.direction = DIRECTION_DOWN
+			display.getCurrentStage():setFocus(down)
+		end
+	end
+	completeMoving()
+end
+
+local onButtonRightEvent = function(event)
+	player.direction = DIRECTION_RIGHT
+	player:prepare("playerright")
+	if event.phase == "press" and canMove() then
+		if canPushBoulder() and player.state == STATE_IDLE then
+			--action = true
+			player.state = STATE_WALKING
+			player:play("playerright")
+			-- transition.to(player, {time=SPEED, x=player.x+TILE_WIDTH, y=player.y})
+			 player.j = player.j + 1
+			-- timer1 = timer.performWithDelay(250, completeMoving)
+			-- print("A")
+			completeMoving()
+			--action = false
+			-- snapPlayerToGrid()
+		end
+	elseif event.phase == "moved" then
+		local test = display.newRect( event.x, event.y, 0, 0 )
+		changeDirection(test)
+		test:removeSelf()
+		--player.state = STATE_IDLE
+	end
+end
+
+local onButtonUpEvent = function(event)
+	player.direction = DIRECTION_UP	
+	if event.phase == "press" and canMove() then
+		if canPushBoulder() and player.state == STATE_IDLE then
+			player.state = STATE_WALKING
+			player:play()
+			-- transition.to(player, {time=SPEED, x=player.x, y=player.y-TILE_WIDTH})
+			-- timer1 = timer.performWithDelay(250, completeMoving)
+			 player.i = player.i - 1
+			-- snapPlayerToGrid()
+			completeMoving()
+		end
+	elseif event.phase == "moved" then
+		local test = display.newRect( event.x, event.y, 0, 0 )
+		changeDirection(test)
+		test:removeSelf()
+	end
+end
+
+local onButtonLeftEvent = function(event)
+	player.direction = DIRECTION_LEFT
+	player:prepare("playerleft")
+	if event.phase == "press" and canMove() then
+		if canPushBoulder() and player.state == STATE_IDLE then
 		player.state = STATE_WALKING
+		player:play("playerleft")
+		-- transition.to(player, {time=SPEED, x=player.x-TILE_WIDTH, y=player.y})
+		-- timer1 = timer.performWithDelay(250, completeMoving)
+		 player.j = player.j - 1
+		-- 	-- snapPlayerToGrid()
 		completeMoving()
+		end
+	elseif event.phase == "moved" then
+		local test = display.newRect( event.x, event.y, 0, 0 )
+		changeDirection(test)
+		test:removeSelf()
+		--player.state = STATE_IDLE
 	end
 end
 
-onTouch = function(event)
-	if (event.y > TILE_WIDTH) then
-		if (event.phase == "cancelled" or event.phase == "ended") then
-			if event.phase == "ended" then
-				player.state = STATE_IDLE
-				player:pause()
-			end
-		end
+local onButtonDownEvent = function(event)
+		--timer.cancel(timer1)
+		player.direction = DIRECTION_DOWN
+	if event.phase == "press" and canMove() then
+	if canPushBoulder() and player.state == STATE_IDLE then
 
-		if (event.phase == "began" or event.phase == "moved") then
-			local angle = Dpad.getAngle(dpad, event) 
-			if angle ~= nil then
-				if angle > 315 then
-					angle = angle - 315
-				end
-				local angleDirection = math.floor((angle + 45) / 90)
-				player.direction = angleDirection
-				move(player, event)
-			end
+		--print("a")
+		 player.state = STATE_WALKING
+		player:play()
+		-- transition.to(player, {time=SPEED, x=player.x, y=player.y+TILE_WIDTH})
+		-- timer.performWithDelay(250, completeMoving)
+		 player.i = player.i + 1
+		completeMoving()
+			-- snapPlayerToGrid()
 		end
-
-		if (dpad ~= nil) then
-			-- Move dpad if touch gets away its range
-			Dpad.moveToTouch(dpad, event)
-		end
+	elseif event.phase == "moved" then
+		local test = display.newRect( event.x, event.y, 0, 0 )
+		changeDirection(test)
+		test:removeSelf()
+		--player.state = STATE_IDLE
 	end
 end
-
 local action = true
 
 completeMoving2 = function()
@@ -452,90 +399,88 @@ completeMoving2 = function()
 	completeMoving()
 end
 completeMoving = function(obj)
-	if player ~= nil and player.state == STATE_WALKING and canMove() and action and canPushObject() then
+	--timer.cancel(timer1)
+	if player.state == STATE_WALKING and canMove() and action then
+
+		if canPushBoulder() then
 			action = false
-			
+			player:play()
 			local nextPlayer = createPossibleObject(player, player.direction)
 			
 			transition.to(player, {time=SPEED, x=nextPlayer.x, y=nextPlayer.y, onComplete=completeMoving2})
-			player:play()
+			
 			nextPlayer:removeSelf()
+			snapPlayerToGrid()
+			
 		end
+	end
 end
 
+local function unheld (event)
+	--print(event.phase)
+	if event.phase == "ended" then
+		--timer.cancel(timer1)
+		player.state = STATE_IDLE
+		player:pause()
+		if (player.i == (player.y + OFFSET) / TILE_WIDTH) == false or (player.j == (player.x + OFFSET) / TILE_WIDTH) == false then
+		-- 	player.x = player.j * TILE_WIDTH - OFFSET
+		-- 	player.y = player.i * TILE_WIDTH - OFFSET
+		 end
+		--print( player.state)
+	end
+end
+
+local function createDpad()
+	up = widget.newButton{
+		default = "images/Dpad Key up.png",
+		over = "images/Dpad Key up.png",
+		onEvent = onButtonUpEvent
+	}
+	down = widget.newButton{
+		default = "images/Dpad Key down.png",
+		over = "images/Dpad Key down.png",
+		onEvent = onButtonDownEvent
+	}
+	left = widget.newButton{
+		default = "images/Dpad Key left.png",
+		over = "images/Dpad Key left.png",
+		onEvent = onButtonLeftEvent
+	}
+	right = widget.newButton{
+		default = "images/Dpad Key right.png",
+		over = "images/Dpad Key right.png",
+		onEvent = onButtonRightEvent
+	}
+
+	up.x = 80
+	up.y = 210
+	down.x = 80
+	down.y = 290
+	left.x = 27
+	left.y = 250
+	right.x = 133
+	right.y = 250
+	up:addEventListener("touch", unheld)
+	down:addEventListener("touch", unheld)
+	left:addEventListener("touch", unheld)
+	right:addEventListener("touch", unheld)
+	dpadGroup:insert(up)
+	dpadGroup:insert(down)
+	dpadGroup:insert(left)
+	dpadGroup:insert(right)
+
+	down:addEventListener("touch", onButtonDownEvent)
+	up:addEventListener("touch", onButtonUpEvent)
+	right:addEventListener("touch", onButtonRightEvent)
+	left:addEventListener("touch", onButtonLeftEvent)
+end
+
+--cleaning the screen
 local function cleanGroups(group)
 	for i = 1, #group do
 		group[i]:removeSelf()
 	end
 	group = display.newGroup()
-end
-
-local function testCollisions()
-	for i = 1, #sands do
-		 if hasCollided(sands[i], player) then
-			sands[i].isVisible = false
-		 end
-	end
-	if hasCollided(door, player) then
-		if door.open == true then
-			currentLevel = currentLevel + 1
-			storyboard.currentLevel = currentLevel
-			score = score + SCORE_MULTIPLIER * player.lives
-			storyboard.score = score
-			storyboard.timeBonus = SCORE_MULTIPLIER * timerText
-			Runtime:removeEventListener("enterFrame", gravityObjects)
-			Runtime:removeEventListener("enterFrame", testCollisions)
-			storyboard.gotoScene( "completedLevel", "slideLeft", 800 )
-		end	
-	end
-	if hasCollided(door, key) then
-		if sound then
-			media.playEventSound(rewardSFX)
-		end
-		door.open = true
-		door:play()
-		key.isVisible = false
-	end
-	for i = 1, #enemies do
-		fakePlayer = display.newRect(player.x,player.y,0,0)
-		 if hasCollidedRectangle(enemies[i], fakePlayer) then
-			enemies[i].isVisible = false
-			killPlayer()
-		 end
-		 fakePlayer:removeSelf()
-		for iboulders = 1, #boulders do
-			if hasCollided(boulders[iboulders], enemies[i]) then
-				--boulders[i].isVisible = false
-				explodeBomb(boulders[iboulders])
-				enemies[i].isVisible = false
-				boulders[iboulders].isVisible = false
-			end
-		end
-	end
-	for i = 1, #boulders do
-		 if hasCollided(boulders[i], player) then
-			boulders[i].isVisible = false
-			explodeBomb(boulders[i])
-			killPlayer()
-		 end
-	end
-end
-
-canGravityObject = function(object)
-	local possibleObject = createPossibleObject(object, DIRECTION_DOWN)
-	if testPossibleCollision(possibleObject) == false then
-		possibleObject:removeSelf()
-		return false
-	end
-	
-	if hasCollided(possibleObject, door) then
-		if (object.name == key) == false then
-			possibleObject:removeSelf()
-			return false
-		end
-	end
-	possibleObject:removeSelf()
-	return true
 end
 
 local function onSuicideButton(event)
@@ -551,32 +496,6 @@ local function onPauseButton(event)
 	end
 end
 
-local function createHeader()
-	suicideButton = ui.newButton{
-		default = "images/suicide button.png",
-		over = "images/suicide button.png",
-		onEvent = onSuicideButton
-	}
-	pauseButton = ui.newButton{
-		default = "images/pause button.png",
-		over = "images/pause button select.png",
-		onEvent = onPauseButton
-	}
-	scoreText:setReferencePoint(display.TopRightReferencePoint)
-	scoreText.x = 400
-	scoreText.y = 0
-	suicideButton.x = 429
-	suicideButton.y = OFFSET
-	pauseButton.x = 455
-	pauseButton.y = OFFSET
-	headerGroup:insert(suicideButton)
-	headerGroup:insert(timeLeft)
-	headerGroup:insert(lives)
-	headerGroup:insert(pauseButton)
-	headerGroup:insert(levelText)
-	headerGroup:insert(scoreText)
-end
-
 local function subtractTime()
 	if timerText - 1 < 0 then
 		killPlayer()
@@ -587,7 +506,7 @@ local function subtractTime()
 end
 
 function explodeBomb(bomb)
-	if sound then 
+	if volume then 
 		media.playEventSound(explosionSFX)
 	end
 	bomb.isVisible = false
@@ -657,24 +576,29 @@ function explodeBomb(bomb)
 end
 
 function gravityObjects()
+	--if gameState then
 	if #boulders > 0 then
 		for i = 1, #boulders do
 			if canGravityObject(boulders[i]) then
-				transition.to(boulders[i], {time=0, y=boulders[i].y + TILE_WIDTH})
+				transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
+				--boulders[i].y = boulders[i].y + TILE_WIDTH
 				boulders[i].falling = true
 			elseif boulders[i].falling == true then
 				local possibleBoulder = createPossibleObject(boulders[i], DIRECTION_DOWN)
 				if hasCollided(possibleBoulder, player) and boulders[i].falling == true then
-					transition.to(boulders[i], {time=0, y=boulders[i].y + TILE_WIDTH})
+					--boulders[i].y = boulders[i].y + TILE_WIDTH
+					transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
 				end
 				for ienemies = 1, #enemies do
 					if hasCollided(possibleBoulder, enemies[ienemies]) and boulders[i].falling == true then
-						transition.to(boulders[i], {time=0, y=boulders[i].y + TILE_WIDTH})
+						--boulders[i].y = boulders[i].y + TILE_WIDTH
+						transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
 					end
 				end
 				for ibombs = 1, #bombs do
 					if hasCollided(possibleBoulder, bombs[ibombs]) and boulders[i].falling == true then
-						transition.to(boulders[i], {time=0, y=boulders[i].y + TILE_WIDTH})
+						--boulders[i].y = boulders[i].y + TILE_WIDTH
+						transition.to(boulders[i], {time=0, x=boulders[i].x, y=boulders[i].y + TILE_WIDTH})
 						explodeBomb(bombs[ibombs])
 					end
 				end
@@ -685,11 +609,13 @@ function gravityObjects()
 	end
 	if canGravityObject(key) then
 		transition.to(key, {time=0, x=key.x, y=key.y + TILE_WIDTH})
+		--key.y = key.y + TILE_WIDTH
 	end
 	if #bombs > 0 then
 		for i = 1, #bombs do
 			if canGravityObject(bombs[i]) and bombs[i].exploded == false then
-				transition.to(bombs[i], {time=0, y=bombs[i].y + TILE_WIDTH})
+				--bombs[i].y = bombs[i].y + TILE_WIDTH
+				transition.to(bombs[i], {time=0, x=bombs[i].x, y=bombs[i].y + TILE_WIDTH})
 				bombs[i].falling = true
 			elseif bombs[i].falling == true then
 				bombs[i].exploded = true
@@ -701,6 +627,7 @@ function gravityObjects()
 	end
 end
 
+--enemy AI
 local function calculateDistance( object1, object2 )
 	local distance = math.sqrt(
 		math.pow(object1.x - object2.x, 2) +
@@ -753,6 +680,12 @@ local function moveEnemy()
 			local distanceEnemy = calculateDistance(
 				enemies[i],
 				player)
+
+			-- print(distances[findSmallestNumber(distances)])
+			-- print("right"..distanceRight)
+			-- print("up"..distanceUp)
+			-- print("left"..distanceLeft)
+			-- print("down"..distanceDown)
 
 			local function transitionEnemy()
 				local smallestNumber = findSmallestNumber(distances)
@@ -836,28 +769,28 @@ function scene:createScene( event )
 					player.i = i
 					player.j = j
 				elseif(level[i][j] == 2) then 
-					local wall = display.newImage("images/2.png")
+					local wall = display.newImage("images/Stone 2 sprite.png")
 					wall.name = "wall"
 					wall.x = TILE_WIDTH * j - OFFSET
 					wall.y = TILE_WIDTH * i - OFFSET
 					table.insert(walls, wall)
 					group:insert(wall)
 				elseif(level[i][j] == 3) then 
-					local sand = display.newImage("images/3.png")
+					local sand = display.newImage("images/sand.png")
 					sand.name = "sand"
 					sand.x = TILE_WIDTH * j - OFFSET
 					sand.y = TILE_WIDTH * i - OFFSET
 					table.insert(sands, sand)
 					group:insert(sand)
 				elseif(level[i][j] == 4) then 
-					local boulder = display.newImage("images/4.png")
+					local boulder = display.newImage("images/Rock.png")
 					boulder.x = TILE_WIDTH * j - OFFSET
 					boulder.y = TILE_WIDTH * i - OFFSET
 					boulder.falling = false
 					table.insert(boulders, boulder)
 					group:insert(boulder)
 				elseif(level[i][j] == 5) then 
-					local bomb = display.newImage("images/5.png")
+					local bomb = display.newImage("images/Bomb sprite.png")
 					bomb.x = TILE_WIDTH * j - OFFSET
 					bomb.y = TILE_WIDTH * i - OFFSET
 					bomb.falling = false
@@ -873,7 +806,7 @@ function scene:createScene( event )
 					table.insert(enemies, enemy)
 					group:insert(enemy)
 				elseif(level[i][j] == 7) then 
-					local stone = display.newImage("images/7.png")
+					local stone = display.newImage("images/stone.png")
 					stone.name = "stone"
 					stone.x = TILE_WIDTH * j - OFFSET
 					stone.y = TILE_WIDTH * i - OFFSET
@@ -920,15 +853,25 @@ function scene:createScene( event )
 		createDoor()
 		groupInsert()
 		buildLevel(levels[currentLevel])
+		createDpad()
 		createHeader()
 	end
 	main()
 	
 end
 
+local function add2Numbers( Number1, Number2 )
+	
+	return Number1 + Number2
+end
+
+local number = add2Numbers(2, 3)
+
+
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	local group = self.view
+	--Runtime:addEventListener("enterFrame", gravityObjects)\
 	storyboard.removeScene("completedLevel")
 	storyboard.removeScene("levels")
 	storyboard.removeScene("levels2")
@@ -940,14 +883,10 @@ function scene:enterScene( event )
 
 	Runtime:addEventListener("enterFrame", testCollisions)
 
-	-- if audio.getSessionProperty( audio.OtherAudioIsPlaying  ) == 1 then 
- --    	audio.setSessionProperty(audio.MixMode, audio.AmbientMixMode)
-	-- 	media.setSoundVolume(0)
-	-- end
-	dpad = Dpad.create(100, 250)
-	--group:insert(dpad)
-	dpad.isVisible = true
-	background:addEventListener("touch", onTouch)
+	if audio.getSessionProperty( audio.OtherAudioIsPlaying  ) == 1 then 
+    	audio.setSessionProperty(audio.MixMode, audio.AmbientMixMode)
+		media.setSoundVolume(0)
+	end
 end
 
 
@@ -958,19 +897,16 @@ function scene:exitScene( event )
 	timer.pause(enemyTimer)
 	timer.pause(gravityTimer)
 
-	Dpad.destroy(dpad)
-	dpad = nil
 	--Runtime:removeEventListener("enterFrame", gravityObjects)
 	Runtime:removeEventListener("enterFrame", testCollisions)
-
 end
 
 
 -- Called prior to the removal of scene's "view" (display group)
 function scene:destroyScene( event )
 	local group = self.view
-	player:removeSelf()
-	player = nil
+	--Runtime:removeEventListener("enterFrame", gravityObjects)
+	--Runtime:removeEventListener("enterFrame", testCollisions)
 end
 
 ---------------------------------------------------------------------------------

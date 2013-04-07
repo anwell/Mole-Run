@@ -1,17 +1,14 @@
-----------------------------------------------------------------------------------
---
--- scenetemplate.lua
---
-----------------------------------------------------------------------------------
-
 local storyboard = require( "storyboard" )
+local levelMax = string.sub(storyboard.getCurrentSceneName(), 7, 9) * 10
+local levelMin = levelMax-9
+
 local widget = require "widget"
 local scene = storyboard.newScene()
 
 storyboard.score = 0
 
 local background = display.newImage ("images/dirtBackground.png")
-local levelsTitle = display.newText( "Levels (21-30)", 0, 0, native.systemFontBold, 40 )
+local levelsTitle = display.newText( "Levels ("..levelMin.."-"..levelMax..")", 0, 0, native.systemFontBold, 40 )
 
 local page = 1
 local BUTTON_SPACE = 90
@@ -87,9 +84,6 @@ local levelInfo = {
 	{60, 2,false},
 }
 
-local levelMin = 21
-local levelMax = 30
-local grid
 
 function saveData()
 	file = io.open(filePath, "w")
@@ -120,51 +114,43 @@ function loadData()
 end
 
 local onMenuButton = function(event)
-	if event.phase == "press" then
-		storyboard.gotoScene( "menu", "slideDown", 800  )
-	end
+	storyboard.gotoScene( "menu", "slideDown", 800  )
 end
 
 local menuButton = widget.newButton{
-	default = "images/MenuButton.png",
-	over = "images/MenuButtonselect.png",
-	onEvent = onMenuButton
+	defaultFile = "images/MenuButton.png",
+	overFile = "images/MenuButtonselect.png",
+	onPress = onMenuButton
 }
 
 local onScoresButton = function(event)
-	if event.phase == "press" then
-		storyboard.gotoScene( "scores", "slideUp", 800  )
-	end
+	storyboard.gotoScene( "scores", "slideUp", 800  )
 end
 
 local scoresButton = widget.newButton{
-	default = "images/high score button.png",
-	over = "images/high score button select.png",
-	onEvent = onScoresButton
+	defaultFile = "images/high score button.png",
+	overFile = "images/high score button select.png",
+	onPress = onScoresButton
 }
 
 local onNextPageButton = function(event)
-	if event.phase == "press" then
-		storyboard.gotoScene(  "levels"..(levelMax / 10 + 1), "slideLeft", 800  )
-	end
+		storyboard.gotoScene("levels"..(levelMax / 10 + 1), "slideLeft", 800  )
 end
 
 local nextPageButton = widget.newButton{
-	default = "images/Dpad Key right.png",
-	over = "images/Dpad Key right.png",
-	onEvent = onNextPageButton
+	defaultFile = "images/Dpad Key right.png",
+	overFile = "images/Dpad Key right.png",
+	onPress = onNextPageButton
 }
 
 local onPreviousPageButton = function(event)
-	if event.phase == "press" then
-		storyboard.gotoScene( "levels"..(levelMax / 10 - 1), "slideRight", 800  )
-	end
+	storyboard.gotoScene( "levels"..(levelMax / 10 - 1), "slideRight", 800  )
 end
 
-local previousPageButton = ui.newButton{
-	default = "images/Dpad Key left.png",
-	over = "images/Dpad Key left.png",
-	onEvent = onPreviousPageButton
+local previousPageButton = widget.newButton{
+	defaultFile = "images/Dpad Key left.png",
+	overFile = "images/Dpad Key left.png",
+	onPress = onPreviousPageButton
 }
 
 local function doNothing()
@@ -176,10 +162,21 @@ end
 function scene:createScene( event )
 	local group = self.view
 	local onLevelButton = function(buttonEvent)
-		--if event.phase == "press" then
-			storyboard.currentLevel = buttonEvent.target.name
-			storyboard.gotoScene( "play", "slideDown", 800  )
-		--end
+		storyboard.currentLevel = buttonEvent.target.name
+		storyboard.gotoScene( "play", "slideDown", 800  )
+	end
+	function newLevelButton(label)
+		return widget.newButton{
+			width = 50,
+			height = 50,
+			defaultFile = "images/level_button_blank.png",
+			overFile = "images/level_button_blank.png",
+			onPress = onLevelButton,
+			label = label,
+			font = "Bauhaus 93",
+			fontSize = 42,
+			labelColor = {default = {255, 255, 0, 255}, over = {0}}
+		}
 	end
 	function buildLevelsPage(levelsPage)
 		local j = 1
@@ -188,27 +185,8 @@ function scene:createScene( event )
 			local levelButton
 			local lock = display.newImage("images/lockbutton.png")
 			lock.isVisible = false
-			print(i)
-			if levelsPage[i][3] then
-				levelButton = widget.newButton{
-				default = "images/level_button_blank.png",
-				over = "images/level_button_blank.png",
-				onPress = onLevelButton,
-				label = levelsPage[i][1],
-				font = "Bauhaus 93",
-				fontSize = 42,
-				labelColor = {default = {255, 255, 0, 255}, over = {0}}
-				}
-			else
-				levelButton = widget.newButton{
-				default = "images/level_button_blank.png",
-				over = "images/level_button_blank.png",
-				onPress = doNothing,
-				label = levelsPage[i][1],
-				font = "Bauhaus 93",
-				fontSize = 42,
-				labelColor = {default = {255, 255, 0, 255}, over = {0}}
-				}
+			local levelButton = newLevelButton(levelsPage[i][1])
+			if levelsPage[i][3] == false then
 				lock.isVisible = true
 			end
 			levelButton.x = j * BUTTON_SPACE - OFFSET
@@ -219,7 +197,7 @@ function scene:createScene( event )
 				j = 1
 			end
 			levelButton.y = levelsPage[i][2] * BUTTON_SPACE + OFFSET - 10
-			lock.y = levelsPage[i][2] * BUTTON_SPACE + OFFSET - 20
+			lock.y = levelsPage[i][2] * BUTTON_SPACE + OFFSET - 10
 			levelButton.name = levelsPage[i][1]
 			group:insert(levelButton)
 			group:insert(lock)
@@ -248,7 +226,11 @@ function scene:createScene( event )
 	nextPageButton.y = 35
 	previousPageButton.x = 50
 	previousPageButton.y = 35
-	-- previousPageButton.isVisible = false
+	if levelMin == 1 then
+		previousPageButton.isVisible = false
+	elseif levelMax == 6 then
+		nextPageButton.isVisible = false
+	end
 	-----------------------------------------------------------------------------
 		
 	--	CREATE display objects and add them to 'group' here.
